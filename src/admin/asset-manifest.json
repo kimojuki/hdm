@@ -1,0 +1,1394 @@
+{
+  "generatedAt": "2026-06-26T15:49:37.987Z",
+  "categories": [
+    {
+      "id": "personnages",
+      "label": "Personnages",
+      "description": "Soldats et personnages jouables",
+      "count": 1,
+      "items": [
+        {
+          "id": "personnage-fbx",
+          "name": "personnage",
+          "filename": "personnage.fbx",
+          "path": "/personnage.fbx",
+          "format": "fbx",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "personnage.fbx"
+        }
+      ]
+    },
+    {
+      "id": "armes",
+      "label": "Armes & équipement",
+      "description": "Fusils, explosifs, munitions",
+      "count": 20,
+      "items": [
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-ak47-glb",
+          "name": "ak47",
+          "filename": "ak47.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/ak47.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/ak47.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-ak47variant-glb",
+          "name": "ak47variant",
+          "filename": "ak47variant.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/ak47variant.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/ak47variant.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-ammobox-low-glb",
+          "name": "ammobox low",
+          "filename": "ammobox_low.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/ammobox_low.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/ammobox_low.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-awp-glb",
+          "name": "awp",
+          "filename": "awp.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/awp.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/awp.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-board-glb",
+          "name": "board",
+          "filename": "board.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/board.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/board.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-bulletpew-glb",
+          "name": "bullet PEW",
+          "filename": "bulletPEW.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/bulletPEW.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/bulletPEW.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-bullet1-glb",
+          "name": "bullet1",
+          "filename": "bullet1.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/bullet1.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/bullet1.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-bulletshotgun-glb",
+          "name": "bulletshotgun",
+          "filename": "bulletshotgun.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/bulletshotgun.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/bulletshotgun.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-bulletsniper-glb",
+          "name": "bulletsniper",
+          "filename": "bulletsniper.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/bulletsniper.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/bulletsniper.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-flashbang-low-glb",
+          "name": "flashbang low",
+          "filename": "flashbang_low.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/flashbang_low.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/flashbang_low.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-incendiary-low-glb",
+          "name": "incendiary low",
+          "filename": "incendiary_low.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/incendiary_low.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/incendiary_low.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-mac10-glb",
+          "name": "mac10",
+          "filename": "mac10.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/mac10.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/mac10.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-nade-low-glb",
+          "name": "nade low",
+          "filename": "nade_low.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/nade_low.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/nade_low.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-nadevariant-low-glb",
+          "name": "nadevariant low",
+          "filename": "nadevariant_low.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/nadevariant_low.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/nadevariant_low.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-pew-glb",
+          "name": "pew",
+          "filename": "pew.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/pew.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/pew.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-quadrocket-glb",
+          "name": "quadrocket",
+          "filename": "quadrocket.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/quadrocket.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/quadrocket.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-rocketlaucher-glb",
+          "name": "rocketlaucher",
+          "filename": "rocketlaucher.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/rocketlaucher.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/rocketlaucher.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-rocketlaunchervariant-glb",
+          "name": "rocketlaunchervariant",
+          "filename": "rocketlaunchervariant.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/rocketlaunchervariant.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/rocketlaunchervariant.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-shotgun-glb",
+          "name": "shotgun",
+          "filename": "shotgun.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/shotgun.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/shotgun.glb"
+        },
+        {
+          "id": "guns-01-normal-version-color-and-normalmap-glb-smoke-low-glb",
+          "name": "smoke low",
+          "filename": "smoke_low.glb",
+          "path": "/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/smoke_low.glb",
+          "format": "glb",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "guns/01/Normal version Color and NormalMap/GLB/smoke_low.glb"
+        }
+      ]
+    },
+    {
+      "id": "batiments",
+      "label": "Bâtiments",
+      "description": "Structures de la colonie spatiale",
+      "count": 37,
+      "items": [
+        {
+          "id": "batiment-map1-fbx-argo-ship-fbx",
+          "name": "‘argo ship",
+          "filename": "‘argo_ship.fbx",
+          "path": "/batiment/map1/fbx/%E2%80%98argo_ship.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/‘argo_ship.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-connecting-gateway-fbx",
+          "name": "Connecting gateway",
+          "filename": "Connecting_gateway.fbx",
+          "path": "/batiment/map1/fbx/Connecting_gateway.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Connecting_gateway.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-connecting-gateway-corner-fbx",
+          "name": "Connecting gateway corner",
+          "filename": "Connecting_gateway_corner.fbx",
+          "path": "/batiment/map1/fbx/Connecting_gateway_corner.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Connecting_gateway_corner.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-connecting-gateway-lit-fbx",
+          "name": "Connecting gateway lit",
+          "filename": "Connecting_gateway_lit.fbx",
+          "path": "/batiment/map1/fbx/Connecting_gateway_lit.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Connecting_gateway_lit.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-connecting-gateway-long-fbx",
+          "name": "Connecting gateway long",
+          "filename": "Connecting_gateway_long.fbx",
+          "path": "/batiment/map1/fbx/Connecting_gateway_long.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Connecting_gateway_long.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-connecting-gateway-slant-fbx",
+          "name": "Connecting gateway slant",
+          "filename": "Connecting_gateway_slant.fbx",
+          "path": "/batiment/map1/fbx/Connecting_gateway_slant.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Connecting_gateway_slant.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-cross-section-fbx",
+          "name": "Cross section",
+          "filename": "Cross_section.fbx",
+          "path": "/batiment/map1/fbx/Cross_section.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Cross_section.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-decontamination-section-fbx",
+          "name": "Decontamination section",
+          "filename": "Decontamination_section.fbx",
+          "path": "/batiment/map1/fbx/Decontamination_section.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Decontamination_section.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-drone-carrier-fbx",
+          "name": "Drone carrier",
+          "filename": "Drone_carrier.fbx",
+          "path": "/batiment/map1/fbx/Drone_carrier.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Drone_carrier.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-drone-charging-station-fbx",
+          "name": "Drone charging station",
+          "filename": "Drone_charging_station.fbx",
+          "path": "/batiment/map1/fbx/Drone_charging_station.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Drone_charging_station.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-drone-control-center-fbx",
+          "name": "Drone control center",
+          "filename": "Drone_control_center.fbx",
+          "path": "/batiment/map1/fbx/Drone_control_center.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Drone_control_center.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-drone-earner-fbx",
+          "name": "Drone earner",
+          "filename": "Drone_earner.fbx",
+          "path": "/batiment/map1/fbx/Drone_earner.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Drone_earner.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-farm-fbx",
+          "name": "Farm",
+          "filename": "Farm.fbx",
+          "path": "/batiment/map1/fbx/Farm.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Farm.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-farm-module-fbx",
+          "name": "Farm module",
+          "filename": "Farm_module.fbx",
+          "path": "/batiment/map1/fbx/Farm_module.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Farm_module.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-geothermal-generator-fbx",
+          "name": "Geothermal generator",
+          "filename": "Geothermal_generator.fbx",
+          "path": "/batiment/map1/fbx/Geothermal_generator.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Geothermal_generator.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-home-colonists-fbx",
+          "name": "Home colonists",
+          "filename": "Home_colonists.fbx",
+          "path": "/batiment/map1/fbx/Home_colonists.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Home_colonists.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-home-colonists-fbx",
+          "name": "Home colonists ‚",
+          "filename": "Home_colonists_‚.fbx",
+          "path": "/batiment/map1/fbx/Home_colonists_%E2%80%9A.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Home_colonists_‚.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-machine-building-plant-fbx",
+          "name": "Machine building plant",
+          "filename": "Machine_building_plant.fbx",
+          "path": "/batiment/map1/fbx/Machine_building_plant.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Machine_building_plant.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-main-house-fbx",
+          "name": "Main house",
+          "filename": "Main_house.fbx",
+          "path": "/batiment/map1/fbx/Main_house.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Main_house.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-main-house-2lv-fbx",
+          "name": "Main house 2lv",
+          "filename": "Main_house_2lv.fbx",
+          "path": "/batiment/map1/fbx/Main_house_2lv.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Main_house_2lv.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-main-house-3lv-fbx",
+          "name": "Main house 3lv",
+          "filename": "Main_house_3lv.fbx",
+          "path": "/batiment/map1/fbx/Main_house_3lv.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Main_house_3lv.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-reactor-fbx",
+          "name": "Reactor",
+          "filename": "Reactor.fbx",
+          "path": "/batiment/map1/fbx/Reactor.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Reactor.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-reactor-add-fbx",
+          "name": "Reactor add",
+          "filename": "Reactor_add.fbx",
+          "path": "/batiment/map1/fbx/Reactor_add.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Reactor_add.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-research-center-fbx",
+          "name": "Research center",
+          "filename": "Research_center.fbx",
+          "path": "/batiment/map1/fbx/Research_center.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Research_center.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-resource-warehouse-fbx",
+          "name": "Resource warehouse",
+          "filename": "Resource_warehouse.fbx",
+          "path": "/batiment/map1/fbx/Resource_warehouse.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Resource_warehouse.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-runway-strip-fbx",
+          "name": "Runway strip",
+          "filename": "Runway strip.fbx",
+          "path": "/batiment/map1/fbx/Runway%20strip.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Runway strip.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-section-fbx",
+          "name": "Section",
+          "filename": "Section.fbx",
+          "path": "/batiment/map1/fbx/Section.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Section.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-section-door-fbx",
+          "name": "Section door",
+          "filename": "Section_door.fbx",
+          "path": "/batiment/map1/fbx/Section_door.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Section_door.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-section-door-key-fbx",
+          "name": "Section door key",
+          "filename": "Section_door_key.fbx",
+          "path": "/batiment/map1/fbx/Section_door_key.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Section_door_key.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-solar-generator-fbx",
+          "name": "Solar generator",
+          "filename": "Solar_generator.fbx",
+          "path": "/batiment/map1/fbx/Solar_generator.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Solar_generator.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-solar-panel-fbx",
+          "name": "Solar panel",
+          "filename": "Solar_panel.fbx",
+          "path": "/batiment/map1/fbx/Solar_panel.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Solar_panel.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-tile-track1-fbx",
+          "name": "Tile track1",
+          "filename": "Tile_track1.fbx",
+          "path": "/batiment/map1/fbx/Tile_track1.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Tile_track1.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-tile-track2-fbx",
+          "name": "Tile track2",
+          "filename": "Tile_track2.fbx",
+          "path": "/batiment/map1/fbx/Tile_track2.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Tile_track2.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-tile-track3-fbx",
+          "name": "Tile track3",
+          "filename": "Tile_track3.fbx",
+          "path": "/batiment/map1/fbx/Tile_track3.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Tile_track3.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-tile-track4-fbx",
+          "name": "Tile track4",
+          "filename": "Tile_track4.fbx",
+          "path": "/batiment/map1/fbx/Tile_track4.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Tile_track4.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-transporter-fbx",
+          "name": "Transporter",
+          "filename": "Transporter.fbx",
+          "path": "/batiment/map1/fbx/Transporter.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Transporter.fbx"
+        },
+        {
+          "id": "batiment-map1-fbx-transporter-001-fbx",
+          "name": "Transporter.001",
+          "filename": "Transporter.001.fbx",
+          "path": "/batiment/map1/fbx/Transporter.001.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/map1/fbx/Transporter.001.fbx"
+        }
+      ]
+    },
+    {
+      "id": "plantes",
+      "label": "Végétation désert",
+      "description": "Plantes et props de sol",
+      "count": 20,
+      "items": [
+        {
+          "id": "solmap1-fbx-desert-plant-001-fbx",
+          "name": "Desert plant 001",
+          "filename": "Desert_plant_001.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_001.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_001.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-002-fbx",
+          "name": "Desert plant 002",
+          "filename": "Desert_plant_002.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_002.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_002.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-003-fbx",
+          "name": "Desert plant 003",
+          "filename": "Desert_plant_003.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_003.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_003.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-004-fbx",
+          "name": "Desert plant 004",
+          "filename": "Desert_plant_004.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_004.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_004.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-005-fbx",
+          "name": "Desert plant 005",
+          "filename": "Desert_plant_005.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_005.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_005.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-006-fbx",
+          "name": "Desert plant 006",
+          "filename": "Desert_plant_006.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_006.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_006.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-007-fbx",
+          "name": "Desert plant 007",
+          "filename": "Desert_plant_007.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_007.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_007.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-008-fbx",
+          "name": "Desert plant 008",
+          "filename": "Desert_plant_008.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_008.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_008.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-009-fbx",
+          "name": "Desert plant 009",
+          "filename": "Desert_plant_009.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_009.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_009.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-010-fbx",
+          "name": "Desert plant 010",
+          "filename": "Desert_plant_010.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_010.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_010.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-011-fbx",
+          "name": "Desert plant 011",
+          "filename": "Desert_plant_011.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_011.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_011.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-012-fbx",
+          "name": "Desert plant 012",
+          "filename": "Desert_plant_012.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_012.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_012.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-013-fbx",
+          "name": "Desert plant 013",
+          "filename": "Desert_plant_013.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_013.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_013.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-014-fbx",
+          "name": "Desert plant 014",
+          "filename": "Desert_plant_014.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_014.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_014.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-015-fbx",
+          "name": "Desert plant 015",
+          "filename": "Desert_plant_015.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_015.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_015.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-016-fbx",
+          "name": "Desert plant 016",
+          "filename": "Desert_plant_016.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_016.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_016.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-017-fbx",
+          "name": "Desert plant 017",
+          "filename": "Desert_plant_017.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_017.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_017.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-018-fbx",
+          "name": "Desert plant 018",
+          "filename": "Desert_plant_018.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_018.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_018.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-019-fbx",
+          "name": "Desert plant 019",
+          "filename": "Desert_plant_019.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_019.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_019.fbx"
+        },
+        {
+          "id": "solmap1-fbx-desert-plant-020-fbx",
+          "name": "Desert plant 020",
+          "filename": "Desert_plant_020.fbx",
+          "path": "/solmap1/Fbx/Desert_plant_020.fbx",
+          "format": "fbx",
+          "textures": [
+            "/solmap1/Textures/T_Desert_plants.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "solmap1/Fbx/Desert_plant_020.fbx"
+        }
+      ]
+    },
+    {
+      "id": "montagnes",
+      "label": "Relief & montagnes",
+      "description": "Collines, montagnes et plateaux",
+      "count": 20,
+      "items": [
+        {
+          "id": "environement-montagne-fbx-hill-desert-001-fbx",
+          "name": "Hill desert 001",
+          "filename": "Hill_desert_001.fbx",
+          "path": "/environement/montagne/Fbx/Hill_desert_001.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Hill_desert_001.jpg",
+          "source": "environement/montagne/Fbx/Hill_desert_001.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-hill-desert-002-fbx",
+          "name": "Hill desert 002",
+          "filename": "Hill_desert_002.fbx",
+          "path": "/environement/montagne/Fbx/Hill_desert_002.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Hill_desert_002.jpg",
+          "source": "environement/montagne/Fbx/Hill_desert_002.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-hill-desert-003-fbx",
+          "name": "Hill desert 003",
+          "filename": "Hill_desert_003.fbx",
+          "path": "/environement/montagne/Fbx/Hill_desert_003.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Hill_desert_003.jpg",
+          "source": "environement/montagne/Fbx/Hill_desert_003.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-hill-desert-004-fbx",
+          "name": "Hill desert 004",
+          "filename": "Hill_desert_004.fbx",
+          "path": "/environement/montagne/Fbx/Hill_desert_004.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Hill_desert_004.jpg",
+          "source": "environement/montagne/Fbx/Hill_desert_004.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-hill-desert-005-fbx",
+          "name": "Hill desert 005",
+          "filename": "Hill_desert_005.fbx",
+          "path": "/environement/montagne/Fbx/Hill_desert_005.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Hill_desert_005.jpg",
+          "source": "environement/montagne/Fbx/Hill_desert_005.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-mountain-desert-001-fbx",
+          "name": "Mountain desert 001",
+          "filename": "Mountain_desert_001.fbx",
+          "path": "/environement/montagne/Fbx/Mountain_desert_001.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Mountain_desert_001.jpg",
+          "source": "environement/montagne/Fbx/Mountain_desert_001.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-mountain-desert-002-fbx",
+          "name": "Mountain desert 002",
+          "filename": "Mountain_desert_002.fbx",
+          "path": "/environement/montagne/Fbx/Mountain_desert_002.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Mountain_desert_002.jpg",
+          "source": "environement/montagne/Fbx/Mountain_desert_002.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-mountain-desert-003-fbx",
+          "name": "Mountain desert 003",
+          "filename": "Mountain_desert_003.fbx",
+          "path": "/environement/montagne/Fbx/Mountain_desert_003.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Mountain_desert_003.jpg",
+          "source": "environement/montagne/Fbx/Mountain_desert_003.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-mountain-desert-004-fbx",
+          "name": "Mountain desert 004",
+          "filename": "Mountain_desert_004.fbx",
+          "path": "/environement/montagne/Fbx/Mountain_desert_004.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Mountain_desert_004.jpg",
+          "source": "environement/montagne/Fbx/Mountain_desert_004.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-mountain-desert-005-fbx",
+          "name": "Mountain desert 005",
+          "filename": "Mountain_desert_005.fbx",
+          "path": "/environement/montagne/Fbx/Mountain_desert_005.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Mountain_desert_005.jpg",
+          "source": "environement/montagne/Fbx/Mountain_desert_005.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-mountain-desert-006-fbx",
+          "name": "Mountain desert 006",
+          "filename": "Mountain_desert_006.fbx",
+          "path": "/environement/montagne/Fbx/Mountain_desert_006.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Mountain_desert_006.jpg",
+          "source": "environement/montagne/Fbx/Mountain_desert_006.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-mountain-desert-007-fbx",
+          "name": "Mountain desert 007",
+          "filename": "Mountain_desert_007.fbx",
+          "path": "/environement/montagne/Fbx/Mountain_desert_007.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Mountain_desert_007.jpg",
+          "source": "environement/montagne/Fbx/Mountain_desert_007.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-mountain-desert-008-fbx",
+          "name": "Mountain desert 008",
+          "filename": "Mountain_desert_008.fbx",
+          "path": "/environement/montagne/Fbx/Mountain_desert_008.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Mountain_desert_008.jpg",
+          "source": "environement/montagne/Fbx/Mountain_desert_008.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-mountain-desert-009-fbx",
+          "name": "Mountain desert 009",
+          "filename": "Mountain_desert_009.fbx",
+          "path": "/environement/montagne/Fbx/Mountain_desert_009.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Mountain_desert_009.jpg",
+          "source": "environement/montagne/Fbx/Mountain_desert_009.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-mountain-desert-010-fbx",
+          "name": "Mountain desert 010",
+          "filename": "Mountain_desert_010.fbx",
+          "path": "/environement/montagne/Fbx/Mountain_desert_010.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Mountain_desert_010.jpg",
+          "source": "environement/montagne/Fbx/Mountain_desert_010.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-plateau-desert-001-fbx",
+          "name": "Plateau desert 001",
+          "filename": "Plateau_desert_001.fbx",
+          "path": "/environement/montagne/Fbx/Plateau_desert_001.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Plateau_desert_001.jpg",
+          "source": "environement/montagne/Fbx/Plateau_desert_001.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-plateau-desert-002-fbx",
+          "name": "Plateau desert 002",
+          "filename": "Plateau_desert_002.fbx",
+          "path": "/environement/montagne/Fbx/Plateau_desert_002.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Plateau_desert_002.jpg",
+          "source": "environement/montagne/Fbx/Plateau_desert_002.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-plateau-desert-003-fbx",
+          "name": "Plateau desert 003",
+          "filename": "Plateau_desert_003.fbx",
+          "path": "/environement/montagne/Fbx/Plateau_desert_003.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Plateau_desert_003.jpg",
+          "source": "environement/montagne/Fbx/Plateau_desert_003.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-plateau-desert-004-fbx",
+          "name": "Plateau desert 004",
+          "filename": "Plateau_desert_004.fbx",
+          "path": "/environement/montagne/Fbx/Plateau_desert_004.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Plateau_desert_004.jpg",
+          "source": "environement/montagne/Fbx/Plateau_desert_004.fbx"
+        },
+        {
+          "id": "environement-montagne-fbx-plateau-desert-005-fbx",
+          "name": "Plateau desert 005",
+          "filename": "Plateau_desert_005.fbx",
+          "path": "/environement/montagne/Fbx/Plateau_desert_005.fbx",
+          "format": "fbx",
+          "textures": [
+            "/environement/montagne/Textures/T_Mountains_desert.png"
+          ],
+          "mtl": null,
+          "previewFallback": "environement/montagne/Preview/Plateau_desert_005.jpg",
+          "source": "environement/montagne/Fbx/Plateau_desert_005.fbx"
+        }
+      ]
+    },
+    {
+      "id": "ennemis",
+      "label": "Ennemis",
+      "description": "Unités hostiles",
+      "count": 9,
+      "items": [
+        {
+          "id": "ennemie-package-3-arachnoid-obj",
+          "name": "Arachnoid",
+          "filename": "Arachnoid.obj",
+          "path": "/ennemie/Package%203/Arachnoid.obj",
+          "format": "obj",
+          "textures": [],
+          "mtl": "/ennemie/Package%203/Arachnoid.mtl",
+          "previewFallback": null,
+          "source": "ennemie/Package 3/Arachnoid.obj"
+        },
+        {
+          "id": "ennemie-package-4-companion-bot-obj",
+          "name": "Companion-bot",
+          "filename": "Companion-bot.obj",
+          "path": "/ennemie/Package%204/Companion-bot.obj",
+          "format": "obj",
+          "textures": [],
+          "mtl": "/ennemie/Package%204/Companion-bot.mtl",
+          "previewFallback": null,
+          "source": "ennemie/Package 4/Companion-bot.obj"
+        },
+        {
+          "id": "ennemie-package-5-fieldfighter-obj",
+          "name": "Field Fighter",
+          "filename": "FieldFighter.obj",
+          "path": "/ennemie/Package%205/FieldFighter.obj",
+          "format": "obj",
+          "textures": [],
+          "mtl": "/ennemie/Package%205/FieldFighter.mtl",
+          "previewFallback": null,
+          "source": "ennemie/Package 5/FieldFighter.obj"
+        },
+        {
+          "id": "ennemie-package-2-mechagolem-obj",
+          "name": "Mecha Golem",
+          "filename": "MechaGolem.obj",
+          "path": "/ennemie/Package%202/MechaGolem.obj",
+          "format": "obj",
+          "textures": [],
+          "mtl": "/ennemie/Package%202/MechaGolem.mtl",
+          "previewFallback": null,
+          "source": "ennemie/Package 2/MechaGolem.obj"
+        },
+        {
+          "id": "ennemie-package-6-mechatrooper-obj",
+          "name": "Mecha Trooper",
+          "filename": "MechaTrooper.obj",
+          "path": "/ennemie/Package%206/MechaTrooper.obj",
+          "format": "obj",
+          "textures": [],
+          "mtl": "/ennemie/Package%206/MechaTrooper.mtl",
+          "previewFallback": null,
+          "source": "ennemie/Package 6/MechaTrooper.obj"
+        },
+        {
+          "id": "ennemie-package-mecha01-obj",
+          "name": "Mecha01",
+          "filename": "Mecha01.obj",
+          "path": "/ennemie/Package/Mecha01.obj",
+          "format": "obj",
+          "textures": [],
+          "mtl": "/ennemie/Package/Mecha01.mtl",
+          "previewFallback": null,
+          "source": "ennemie/Package/Mecha01.obj"
+        },
+        {
+          "id": "ennemie-package-7-mobilestoragebot-obj",
+          "name": "Mobile Storage Bot",
+          "filename": "MobileStorageBot.obj",
+          "path": "/ennemie/Package%207/MobileStorageBot.obj",
+          "format": "obj",
+          "textures": [],
+          "mtl": "/ennemie/Package%207/MobileStorageBot.mtl",
+          "previewFallback": null,
+          "source": "ennemie/Package 7/MobileStorageBot.obj"
+        },
+        {
+          "id": "ennemie-package-8-quadrupedtank-obj",
+          "name": "Quadruped Tank",
+          "filename": "QuadrupedTank.obj",
+          "path": "/ennemie/Package%208/QuadrupedTank.obj",
+          "format": "obj",
+          "textures": [],
+          "mtl": "/ennemie/Package%208/QuadrupedTank.mtl",
+          "previewFallback": null,
+          "source": "ennemie/Package 8/QuadrupedTank.obj"
+        },
+        {
+          "id": "ennemie-package-9-reconbot-obj",
+          "name": "Recon Bot",
+          "filename": "ReconBot.obj",
+          "path": "/ennemie/Package%209/ReconBot.obj",
+          "format": "obj",
+          "textures": [],
+          "mtl": "/ennemie/Package%209/ReconBot.mtl",
+          "previewFallback": null,
+          "source": "ennemie/Package 9/ReconBot.obj"
+        }
+      ]
+    },
+    {
+      "id": "autres",
+      "label": "Autres",
+      "description": "Assets non classés",
+      "count": 0,
+      "items": []
+    }
+  ],
+  "stats": {
+    "total": 107
+  }
+}

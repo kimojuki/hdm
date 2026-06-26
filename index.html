@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>HDM — Test Map Sol 1</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1208; touch-action: none; }
+      #app { width: 100%; height: 100%; }
+      canvas { display: block; width: 100%; height: 100%; }
+
+      #hud {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        font-family: system-ui, -apple-system, sans-serif;
+        color: #f5e6c8;
+      }
+
+      #title {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0.7;
+      }
+
+      #loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at center, #2a1f0f 0%, #0d0904 100%);
+        transition: opacity 0.6s ease;
+        pointer-events: all;
+      }
+
+      #loading.hidden { opacity: 0; pointer-events: none; }
+
+      #loading p {
+        margin-top: 16px;
+        font-size: 14px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        opacity: 0.6;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(245, 230, 200, 0.15);
+        border-top-color: #e8a84b;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      #joystick-zone {
+        position: absolute;
+        bottom: 40px;
+        left: 40px;
+        width: 140px;
+        height: 140px;
+        pointer-events: all;
+      }
+
+      #joystick-base {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: rgba(245, 230, 200, 0.08);
+        border: 2px solid rgba(245, 230, 200, 0.2);
+        position: relative;
+      }
+
+      #joystick-stick {
+        position: absolute;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(232, 168, 75, 0.5);
+        border: 2px solid rgba(232, 168, 75, 0.8);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        transition: box-shadow 0.1s;
+      }
+
+      #joystick-stick.active {
+        box-shadow: 0 0 20px rgba(232, 168, 75, 0.4);
+      }
+
+      #camera-hint {
+        position: absolute;
+        top: 50%;
+        right: 24px;
+        transform: translateY(-50%);
+        font-size: 10px;
+        opacity: 0.28;
+        text-align: center;
+        line-height: 1.4;
+        pointer-events: none;
+        letter-spacing: 0.04em;
+      }
+
+      #hint {
+        position: absolute;
+        bottom: 20px;
+        right: 16px;
+        font-size: 11px;
+        opacity: 0.4;
+        text-align: right;
+        line-height: 1.5;
+      }
+
+      #jump-btn {
+        position: absolute;
+        bottom: 48px;
+        right: 40px;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        border: 2px solid rgba(232, 168, 75, 0.8);
+        background: rgba(232, 168, 75, 0.35);
+        color: #f5e6c8;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        pointer-events: all;
+        touch-action: manipulation;
+      }
+
+      #jump-btn:active {
+        background: rgba(232, 168, 75, 0.6);
+        box-shadow: 0 0 20px rgba(232, 168, 75, 0.35);
+      }
+
+      @media (max-width: 600px) {
+        #joystick-zone { bottom: 24px; left: 24px; width: 120px; height: 120px; }
+        #jump-btn { bottom: 32px; right: 24px; width: 64px; height: 64px; font-size: 11px; }
+        #camera-hint { right: 16px; font-size: 9px; }
+        #hint { display: none; }
+      }
+
+      @media (min-width: 601px) {
+        #camera-hint { display: none; }
+      }
+
+      #admin-link {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        font-size: 12px;
+        color: #e8a84b;
+        text-decoration: none;
+        opacity: 0.7;
+        pointer-events: all;
+      }
+
+      #admin-link:hover { opacity: 1; text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="hud">
+      <div id="title">HDM — Sol Map 1 Test</div>
+      <div id="loading">
+        <div class="spinner"></div>
+        <p>Chargement des assets…</p>
+      </div>
+      <div id="joystick-zone">
+        <div id="joystick-base">
+          <div id="joystick-stick"></div>
+        </div>
+      </div>
+      <div id="camera-hint">Glisser<br/>vue</div>
+      <div id="hint">ZQSD / WASD — déplacer · Espace — sauter<br/>Souris glisser — vue · Molette — zoom</div>
+      <button type="button" id="jump-btn" aria-label="Sauter">Saut</button>
+      <a href="/admin.html" id="admin-link">Admin assets</a>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

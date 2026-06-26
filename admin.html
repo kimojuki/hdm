@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HDM — Admin Assets</title>
+    <link rel="stylesheet" href="/src/admin/admin.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <p class="brand-kicker">HDM</p>
+          <h1>Asset Library</h1>
+          <p class="brand-sub" id="stats"></p>
+        </div>
+        <nav id="nav" class="nav"></nav>
+        <div class="sidebar-foot">
+          <a href="/" class="back-link">← Retour au jeu</a>
+          <p class="generated" id="generated"></p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="toolbar">
+          <div>
+            <h2>Bibliothèque d'assets</h2>
+            <p id="result-count"></p>
+            <p id="progress" class="progress"></p>
+          </div>
+          <input id="search" type="search" placeholder="Rechercher un asset…" />
+        </header>
+        <section id="grid" class="grid"></section>
+      </main>
+    </div>
+    <script type="module" src="/src/admin/main.js"></script>
+  </body>
+</html>
