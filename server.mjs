@@ -36,6 +36,17 @@ function send(res, status, body, type = 'text/plain; charset=utf-8') {
 
 const server = http.createServer((req, res) => {
   const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
+
+  if (urlPath === '/health') {
+    const checks = ['index.html', 'personnage.fbx', 'assets'].map((name) => {
+      const p = path.join(ROOT, name);
+      return { name, ok: fs.existsSync(p) };
+    });
+    const ok = checks.every((c) => c.ok);
+    send(res, ok ? 200 : 503, JSON.stringify({ ok, port: PORT, root: ROOT, checks }), 'application/json');
+    return;
+  }
+
   const safePath = path.normalize(urlPath).replace(/^(\.\.[/\\])+/, '');
   let filePath = path.join(ROOT, safePath === path.sep ? 'index.html' : safePath);
 

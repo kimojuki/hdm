@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { loadWithTimeout } from './loadUtils.js';
 import { equipAk47 } from './weapons.js';
 
 const TARGET_HEIGHT = 1.8;
@@ -157,7 +158,11 @@ function blendOffsets(idle, walk, walkWeight) {
 
 export async function loadPlayer() {
   const loader = new FBXLoader();
-  const fbx = await loader.loadAsync('/personnage.fbx');
+  const fbx = await loadWithTimeout(
+    loader.loadAsync('/personnage.fbx'),
+    90000,
+    'personnage.fbx',
+  );
 
   prepareMeshes(fbx);
 

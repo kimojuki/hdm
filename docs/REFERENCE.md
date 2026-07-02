@@ -48,6 +48,10 @@ PORT=4001 npm start             # sert dist/ via server.mjs
 
 Migration unique si le dépôt était cloné dans `hdm/` : `bash scripts/migrate-to-site-root.sh`
 
+**Toujours en ligne** : l'app Node doit être activée et redémarrée via le Manager Infomaniak (`npm start` tourne en permanence, pas en SSH manuel). Test : `curl http://127.0.0.1:4001/health`
+
+**Spinner infini** : cause fréquente = Apache sert `index.html` dev (avec `/src/main.js`) au lieu du proxy Node → `dist/`. Le script `deploy.sh` supprime ce fichier à la racine après chaque build.
+
 ---
 
 ## 2. Structure des fichiers
@@ -426,7 +430,7 @@ Utilise la **bbox des meshes visibles** (pas les nœuds vides FBX/OBJ).
 | 2026-07 | Spawn joueur sécurisé hors bâtiments + fallback AABB locales anti-traversée résiduelle |
 | 2026-07 | **Refonte moteur collision** : fix API `closestPointToPoint` (cause racine des traversées), 1 collider mesh fusionné par bâtiment (`StaticGeometryGenerator`), zéro padding, capsule 3 sphères, toggle debug touche H, tests Node (`scripts/test-collisions.mjs`) |
 | 2026-07 | Map 140×140, relief sol enrichi, anneau montagnes double mur (`buildMountainRingLayout`), éditeur de map in-game (touche E : placer/sélectionner/déplacer/échelle/rotation/suppression + export JSON) |
-| 2026-07 | **Déploiement Infomaniak** : `server.mjs` + `npm start`, scripts `deploy.sh` / `migrate-to-site-root.sh`, racine site `~/sites/helldivermobiel.com` |
+| 2026-07 | **Fix déploiement** : suppression `index.html` dev à la racine (conflit Apache), vérif assets HEAD, timeout chargement, endpoint `/health` |
 
 ---
 

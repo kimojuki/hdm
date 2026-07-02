@@ -10,6 +10,7 @@ import { loadMissionMap } from './missionMap.js';
 import { PlayerSession } from './playerSession.js';
 import { PlayerBase } from './playerBase.js';
 import { LocationMenu, LOCATION } from './locationMenu.js';
+import { assertAsset } from './loadUtils.js';
 
 const PLAYER_RADIUS = 0.42;
 const SHOW_DEBUG = false;
@@ -299,6 +300,11 @@ function setLoadingStatus(text) {
 }
 
 async function initGame() {
+  setLoadingStatus('Vérification des assets…');
+  await assertAsset('/personnage.fbx');
+  await assertAsset('/solmap1/Textures/T_Desert_plants.png');
+  await assertAsset('/batiment/map1/fbx/Main_house_3lv.fbx');
+
   setLoadingStatus('Chargement du personnage…');
   player = await loadPlayer();
   scene.add(player);

@@ -19,7 +19,8 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
 fi
 
 echo "→ Déploiement HDM dans $SITE_ROOT"
-git pull
+git fetch origin
+git reset --hard origin/main
 npm install
 npm run build
 
@@ -28,5 +29,22 @@ if [ ! -f dist/personnage.fbx ]; then
   exit 1
 fi
 
+# Apache peut servir index.html (dev) à la racine au lieu de proxy → Node/dist.
+# Sans ça : spinner infini (le navigateur charge /src/main.js qui n'existe pas en prod).
+rm -f index.html admin.html 2>/dev/null || true
+
+# Anciennes copies statiques hors dist/ (déploiements manuels)
+rm -rf batiment ennemie environement guns solmap1 vehicule 2>/dev/null || true
+rm -f personnage.fbx 2>/dev/null || true
+
 echo "→ Build OK ($(du -sh dist | cut -f1))"
-echo "→ Redémarre l'app Node dans le Manager Infomaniak (port 4001, start: npm start)"
+echo "→ index.html dev supprimé à la racine (prod = dist/ via Node)"
+echo ""
+echo "Manager Infomaniak — l'app Node doit tourner en permanence :"
+echo "  Dossier : sites/helldivermobiel.com"
+echo "  Port    : 4001"
+echo "  Build   : npm install && npm run build"
+echo "  Start   : npm start"
+echo ""
+echo "→ Redémarre l'app Node dans le Manager, puis teste :"
+echo "  curl -s http://127.0.0.1:4001/health"
