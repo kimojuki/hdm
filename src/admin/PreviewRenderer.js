@@ -98,9 +98,19 @@ async function loadModel(item) {
     objLoader.setMaterials(materials);
     object = await objLoader.loadAsync(item.path);
   } else if (item.format === 'glb' || item.format === 'gltf') {
-    const gltf = await gltfLoader.loadAsync(item.path);
-    object = gltf.scene;
+    const scene = await loadGltfScene(item.path);
+    if (item.prefabNode) {
+      const node = findPrefabNode(scene, item.prefabNode);
+      if (!node) throw new Error(`Prefab « ${item.prefabNode} » introuvable`);
+      object = node.clone(true);
+      object.updateMatrixWorld(true);
+    } else {
+      object = scene.clone(true);
+    }
   } else {
+    if (item.path.includes('/base/neon/')) {
+      fbxLoader.setResourcePath('/batiment/base/neon/textures/');
+    }
     object = await fbxLoader.loadAsync(item.path);
   }
 
@@ -113,11 +123,34 @@ async function loadModel(item) {
   return wrapper;
 }
 
+const gltfSceneCache = new Map();
+
+async function loadGltfScene(path) {
+  if (!gltfSceneCache.has(path)) {
+    const gltf = await gltfLoader.loadAsync(path);
+    gltfSceneCache.set(path, gltf.scene);
+  }
+  return gltfSceneCache.get(path);
+}
+
+function findPrefabNode(scene, prefabNode) {
+  const root = scene.getObjectByName('Root');
+  if (root) {
+    const direct = root.children.find((child) => child.name === prefabNode);
+    if (direct) return direct;
+  }
+  return scene.getObjectByName(prefabNode);
+}
+
 function disposeObject(object) {
   object.traverse((child) => {
     if (!child.isMesh) return;
-    child.geometry?.dispose();
+    // Ne pas disposer geometry/material — partagés via le cache GLTF et les clones.
   });
+}
+
+function assetKey(item) {
+  return item.id ?? item.source ?? item.path;
 }
 
 class PreviewRenderer {
@@ -167,20 +200,21 @@ class PreviewRenderer {
   }
 
   getThumbnail(item) {
-    if (this.cache.has(item.path)) {
-      return Promise.resolve(this.cache.get(item.path));
+    const key = assetKey(item);
+    if (this.cache.has(key)) {
+      return Promise.resolve(this.cache.get(key));
     }
-    if (this.inflight.has(item.path)) {
-      return this.inflight.get(item.path);
+    if (this.inflight.has(key)) {
+      return this.inflight.get(key);
     }
 
     const promise = new Promise((resolve, reject) => {
-      this.queue.push({ item, resolve, reject });
+      this.queue.push({ item, key, resolve, reject });
       this._processQueue();
     });
 
-    this.inflight.set(item.path, promise);
-    promise.finally(() => this.inflight.delete(item.path));
+    this.inflight.set(key, promise);
+    promise.finally(() => this.inflight.delete(key));
     return promise;
   }
 
@@ -192,11 +226,11 @@ class PreviewRenderer {
 
     try {
       const dataUrl = await this._render(job.item);
-      this.cache.set(job.item.path, dataUrl);
-      this._emit(job.item.path, dataUrl);
+      this.cache.set(job.key, dataUrl);
+      this._emit(job.key, dataUrl);
       job.resolve(dataUrl);
     } catch (err) {
-      this._emit(job.item.path, null, err);
+      this._emit(job.key, null, err);
       job.reject(err);
     } finally {
       this.progressDone += 1;
@@ -245,9 +279,9 @@ class PreviewRenderer {
 
 export const previewRenderer = new PreviewRenderer();
 
-export function applyThumbnailToCard(path, dataUrl) {
+export function applyThumbnailToCard(assetId, dataUrl) {
   for (const img of document.querySelectorAll('.preview-img')) {
-    if (img.dataset.path !== path) continue;
+    if (img.dataset.assetId !== assetId) continue;
     const wrap = img.closest('.preview-wrap');
     if (dataUrl) {
       img.src = dataUrl;
@@ -261,11 +295,12 @@ export function applyThumbnailToCard(path, dataUrl) {
 }
 
 export function queueThumbnail(item) {
-  const wrap = document.querySelector(`.preview-img[data-path="${CSS.escape(item.path)}"]`)?.closest('.preview-wrap');
+  const key = assetKey(item);
+  const wrap = document.querySelector(`.preview-img[data-asset-id="${CSS.escape(key)}"]`)?.closest('.preview-wrap');
   wrap?.classList.add('is-loading');
 
-  const unsub = previewRenderer.subscribe(item.path, (dataUrl, err) => {
-    applyThumbnailToCard(item.path, err ? null : dataUrl);
+  const unsub = previewRenderer.subscribe(key, (dataUrl, err) => {
+    applyThumbnailToCard(key, err ? null : dataUrl);
     unsub();
   });
 
@@ -277,8 +312,9 @@ export function queueAllThumbnails(items) {
   const toRender = [];
 
   for (const item of items) {
-    if (previewRenderer.cache.has(item.path)) {
-      applyThumbnailToCard(item.path, previewRenderer.cache.get(item.path));
+    const key = assetKey(item);
+    if (previewRenderer.cache.has(key)) {
+      applyThumbnailToCard(key, previewRenderer.cache.get(key));
       cachedCount += 1;
     } else {
       toRender.push(item);

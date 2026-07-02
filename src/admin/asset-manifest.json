@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-26T15:49:37.987Z",
+  "generatedAt": "2026-07-02T15:14:59.557Z",
   "categories": [
     {
       "id": "personnages",
@@ -245,6 +245,25 @@
           "mtl": null,
           "previewFallback": null,
           "source": "guns/01/Normal version Color and NormalMap/GLB/smoke_low.glb"
+        }
+      ]
+    },
+    {
+      "id": "base",
+      "label": "Base personnelle",
+      "description": "Modèle sci-fi neon (batiment/base/neon/)",
+      "count": 1,
+      "items": [
+        {
+          "id": "base-neon-reaktor",
+          "name": "Neon Base (Reaktor)",
+          "filename": "1.fbx",
+          "path": "/batiment/base/neon/source/1.fbx",
+          "format": "fbx",
+          "textures": [],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/base/neon/source/1.fbx"
         }
       ]
     },
@@ -1389,6 +1408,6 @@
     }
   ],
   "stats": {
-    "total": 107
+    "total": 108
   }
 }

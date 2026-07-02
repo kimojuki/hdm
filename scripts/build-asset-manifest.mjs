@@ -1,6 +1,7 @@
 import { readdir, stat, writeFile } from 'fs/promises';
 import { join, relative, basename, extname } from 'path';
 import { fileURLToPath } from 'url';
+import { BASE_NEON_FBX_PATH } from '../src/basePrefabs.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const ASSETS_DIR = join(ROOT, 'assets');
@@ -56,6 +57,8 @@ function categorize(filePath) {
     return { category: 'armes', textures: [] };
   }
   if (rel.startsWith('batiment/')) {
+    if (rel === 'batiment/base/scene.gltf' || rel === 'batiment/base.fbx') return null;
+    if (rel.startsWith('batiment/base/neon/')) return null;
     return { category: 'batiments', textures: [TEXTURE_MAP.batiments] };
   }
   if (rel.startsWith('solmap1/')) {
@@ -90,12 +93,34 @@ function categorize(filePath) {
 const CATEGORIES = [
   { id: 'personnages', label: 'Personnages', description: 'Soldats et personnages jouables' },
   { id: 'armes', label: 'Armes & équipement', description: 'Fusils, explosifs, munitions' },
+  { id: 'base', label: 'Base personnelle', description: 'Modèle sci-fi neon (batiment/base/neon/)' },
   { id: 'batiments', label: 'Bâtiments', description: 'Structures de la colonie spatiale' },
   { id: 'plantes', label: 'Végétation désert', description: 'Plantes et props de sol' },
   { id: 'montagnes', label: 'Relief & montagnes', description: 'Collines, montagnes et plateaux' },
   { id: 'ennemis', label: 'Ennemis', description: 'Unités hostiles' },
   { id: 'autres', label: 'Autres', description: 'Assets non classés' },
 ];
+
+async function expandBasePrefabs(buckets) {
+  const fbxPath = join(ASSETS_DIR, 'batiment/base/neon/source/1.fbx');
+  try {
+    await stat(fbxPath);
+  } catch {
+    return;
+  }
+
+  buckets.base.push({
+    id: 'base-neon-reaktor',
+    name: 'Neon Base (Reaktor)',
+    filename: '1.fbx',
+    path: BASE_NEON_FBX_PATH,
+    format: 'fbx',
+    textures: [],
+    mtl: null,
+    previewFallback: null,
+    source: 'batiment/base/neon/source/1.fbx',
+  });
+}
 
 async function main() {
   const allFiles = await walk(ASSETS_DIR);
@@ -120,6 +145,8 @@ async function main() {
       source: rel,
     });
   }
+
+  await expandBasePrefabs(buckets);
 
   for (const list of Object.values(buckets)) {
     list.sort((a, b) => a.name.localeCompare(b.name, 'fr'));

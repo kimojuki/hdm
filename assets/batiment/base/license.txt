@@ -1,0 +1,11 @@
+Model Information:
+* title:	Stylized Low Poly Sci-Fi Buildings
+* source:	https://sketchfab.com/3d-models/stylized-low-poly-sci-fi-buildings-701381fef32444e79ad804315e563049
+* author:	Robin Butler (https://sketchfab.com/StarTrekGuy)
+
+Model License:
+* license type:	CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+* requirements:	Author must be credited. No commercial use.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Stylized Low Poly Sci-Fi Buildings" (https://sketchfab.com/3d-models/stylized-low-poly-sci-fi-buildings-701381fef32444e79ad804315e563049) by Robin Butler (https://sketchfab.com/StarTrekGuy) licensed under CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)

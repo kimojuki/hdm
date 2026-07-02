@@ -90,7 +90,7 @@ function renderGrid() {
   for (const item of items) {
     const card = document.createElement('article');
     card.className = 'asset-card';
-    card.dataset.path = item.path;
+    card.dataset.assetId = item.id;
 
     const previewWrap = document.createElement('div');
     previewWrap.className = 'preview-wrap is-loading';
@@ -98,7 +98,7 @@ function renderGrid() {
     const img = document.createElement('img');
     img.className = 'preview-img';
     img.alt = item.name;
-    img.dataset.path = item.path;
+    img.dataset.assetId = item.id;
 
     const formatTag = document.createElement('span');
     formatTag.className = 'format-tag';

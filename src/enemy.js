@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
-import { snapObjectBaseToSurface, sampleTerrainHeightAtFeet } from './terrain.js';
+import { snapObjectBaseToSurface } from './terrain.js';
 
 const MECHA01_BASE = '/ennemie/Package';
 const TARGET_HEIGHT = 2.2;
@@ -309,7 +309,7 @@ function updateEnemyAnimation(enemy, dt, moveWeight, speedRatio) {
   }
 }
 
-export function updateEnemy(enemy, dt, terrainRoots, mapHalf, collisionWorld) {
+export function updateEnemy(enemy, dt, groundSampler, mapHalf, collisionWorld, frameId = 0) {
   if (!enemy?.userData.ai) return;
 
   const ai = enemy.userData.ai;
@@ -363,6 +363,7 @@ export function updateEnemy(enemy, dt, terrainRoots, mapHalf, collisionWorld) {
       mapHalf,
       enemy.position.y,
       enemy,
+      frameId,
     );
     enemy.position.x = resolved.x;
     enemy.position.z = resolved.z;
@@ -371,11 +372,12 @@ export function updateEnemy(enemy, dt, terrainRoots, mapHalf, collisionWorld) {
     enemy.position.z = THREE.MathUtils.clamp(enemy.position.z + moveDz, -mapHalf, mapHalf);
   }
 
-  const groundY = sampleTerrainHeightAtFeet(
+  const groundY = groundSampler.sample(
     enemy.position.x,
     enemy.position.y,
     enemy.position.z,
-    terrainRoots,
+    0.35,
+    'snap',
   );
   enemy.position.y = groundY;
 

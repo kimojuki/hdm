@@ -21,18 +21,105 @@ export function sampleTerrainHeight(x, z, terrainRoots) {
 
 /** Surface sous les pieds — évite de viser le sommet de la montagne depuis le ciel. */
 export function sampleTerrainHeightAtFeet(x, feetY, z, terrainRoots) {
+  return sampleWalkableSurface(x, feetY, z, terrainRoots, 0.35);
+}
+
+const WALK_SAMPLE_OFFSETS_FULL = [
+  [0, 0], [0.25, 0], [-0.25, 0], [0, 0.25], [0, -0.25],
+  [0.18, 0.18], [-0.18, -0.18],
+];
+const WALK_SAMPLE_OFFSETS_MOVE = [
+  [0, 0], [0.25, 0], [-0.25, 0], [0, 0.25], [0, -0.25],
+];
+const WALK_SAMPLE_OFFSETS_SNAP = [[0, 0], [0.2, 0], [-0.2, 0]];
+
+function getProbeOffsets(probeMode) {
+  if (probeMode === 'snap') return WALK_SAMPLE_OFFSETS_SNAP;
+  if (probeMode === 'move') return WALK_SAMPLE_OFFSETS_MOVE;
+  return WALK_SAMPLE_OFFSETS_FULL;
+}
+
+function raycastWalkableAt(x, feetY, z, terrainRoots, maxStepUp, searchDown = null) {
+  if (!terrainRoots?.length) return -Infinity;
+
+  const downReach = searchDown ?? (maxStepUp + 0.6);
+  const startY = feetY + maxStepUp + 2.5;
+  _origin.set(x, startY, z);
+  raycaster.set(_origin, _down);
+  raycaster.far = downReach + maxStepUp + 4;
+  const hits = raycaster.intersectObjects(terrainRoots, true);
+  if (hits.length === 0) return -Infinity;
+
+  const minY = feetY - downReach;
+  const maxY = feetY + maxStepUp + 0.12;
+  let best = -Infinity;
+
+  for (const hit of hits) {
+    if (hit.point.y < minY || hit.point.y > maxY) continue;
+    if (hit.face) {
+      _normal.copy(hit.face.normal).transformDirection(hit.object.matrixWorld);
+      if (_normal.y < 0.42) continue;
+    }
+    best = Math.max(best, hit.point.y);
+  }
+
+  return best;
+}
+
+/** Cherche le support le plus haut sous les pieds (snap au sol / chute). */
+function raycastSupportBelow(x, feetY, z, terrainRoots, maxBelow = 18) {
+  if (!terrainRoots?.length) return -Infinity;
+
   const startY = feetY + 2.5;
   _origin.set(x, startY, z);
   raycaster.set(_origin, _down);
-  raycaster.far = startY + 6;
+  raycaster.far = maxBelow + 4;
   const hits = raycaster.intersectObjects(terrainRoots, true);
-  if (hits.length === 0) return analyticalGroundHeight(x, z);
+  if (hits.length === 0) return -Infinity;
 
+  const minY = feetY - maxBelow;
   let best = -Infinity;
+
   for (const hit of hits) {
-    if (hit.point.y <= feetY + 0.35) best = Math.max(best, hit.point.y);
+    if (hit.point.y > feetY + 0.4 || hit.point.y < minY) continue;
+    if (hit.face) {
+      _normal.copy(hit.face.normal).transformDirection(hit.object.matrixWorld);
+      if (_normal.y < 0.42) continue;
+    }
+    best = Math.max(best, hit.point.y);
   }
-  return best > -Infinity ? best : hits[0].point.y;
+
+  return best;
+}
+
+/**
+ * Surface marchable sous un point, avec tolérance de montée (marches, rampes).
+ * probeMode: 'full' | 'move' | 'snap' — contrôle le nombre de raycasts.
+ */
+export function sampleWalkableSurface(x, feetY, z, terrainRoots, maxStepUp = 0.65, probeMode = 'full') {
+  if (!terrainRoots?.length) return analyticalGroundHeight(x, z);
+
+  if (probeMode === 'snap') {
+    const support = raycastSupportBelow(x, feetY, z, terrainRoots);
+    if (support > -Infinity) return support;
+  }
+
+  const searchDown = probeMode === 'snap' ? 18 : maxStepUp + 0.6;
+  let bestBelow = -Infinity;
+  let bestStep = -Infinity;
+
+  for (const [ox, oz] of getProbeOffsets(probeMode)) {
+    const y = raycastWalkableAt(x + ox, feetY, z + oz, terrainRoots, maxStepUp, searchDown);
+    if (y <= feetY + 0.25 && y >= feetY - searchDown) bestBelow = Math.max(bestBelow, y);
+    if (y > feetY + 0.02 && y <= feetY + maxStepUp + 0.1) bestStep = Math.max(bestStep, y);
+  }
+
+  if (bestStep > feetY + 0.03 && bestStep >= bestBelow - 0.05) return bestStep;
+  if (bestBelow > -Infinity) return bestBelow;
+  if (bestStep > -Infinity) return bestStep;
+
+  const fallback = raycastSupportBelow(x, feetY, z, terrainRoots);
+  return fallback > -Infinity ? fallback : feetY;
 }
 
 /** Bloque le mouvement horizontal contre les parois raides des collines (saut inclus). */
@@ -149,7 +236,9 @@ export function pushOutOfHills(x, z, feetY, hillsGroup, radius) {
 export function analyticalGroundHeight(x, z) {
   const wave = Math.sin(x * 0.15) * Math.cos(z * 0.12) * 0.4;
   const dune = Math.sin((x + z) * 0.08) * 0.6;
-  return wave + dune;
+  const longWave = Math.sin(x * 0.05 - z * 0.035) * 0.9;
+  const ridge = Math.sin(x * 0.028 + z * 0.031) * 0.45;
+  return wave + dune + longWave + ridge;
 }
 
 function isDescendantOf(child, ancestor) {
@@ -217,25 +306,77 @@ export function objectIntersectsGroup(object, group) {
   return intersects;
 }
 
-export function limitMovementBySlope(x, z, dx, dz, terrainRoots, maxClimbAngle) {
+export const MAX_STEP_HEIGHT = 0.9;
+const SLOPE_LOOKAHEAD = 0.6;
+
+export function limitMovementBySlope(x, z, dx, dz, sampler, maxClimbAngle, feetY = 0) {
   if (dx === 0 && dz === 0) return { dx, dz };
 
-  const h0 = sampleTerrainHeight(x, z, terrainRoots);
+  const h0 = sampler.sample(x, feetY, z, MAX_STEP_HEIGHT, 'move');
   const dist = Math.sqrt(dx * dx + dz * dz);
-  const h1 = sampleTerrainHeight(x + dx, z + dz, terrainRoots);
-  const angle = Math.atan2(h1 - h0, dist);
+  const dirX = dx / dist;
+  const dirZ = dz / dist;
 
+  const lookDist = Math.max(dist, SLOPE_LOOKAHEAD);
+  const h1 = sampler.sample(x + dirX * lookDist, feetY, z + dirZ * lookDist, MAX_STEP_HEIGHT, 'move');
+
+  if (h1 > h0 + 0.03 && h1 <= h0 + MAX_STEP_HEIGHT + 0.08) {
+    return { dx, dz };
+  }
+
+  const angle = Math.atan2(h1 - h0, lookDist);
   if (angle <= maxClimbAngle) return { dx, dz };
 
   let lo = 0;
   let hi = 1;
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 4; i++) {
     const m = (lo + hi) * 0.5;
-    const hm = sampleTerrainHeight(x + dx * m, z + dz * m, terrainRoots);
-    const a = Math.atan2(hm - h0, dist * m);
+    const hm = sampler.sample(x + dirX * lookDist * m, feetY, z + dirZ * lookDist * m, MAX_STEP_HEIGHT, 'move');
+    const a = Math.atan2(hm - h0, lookDist * m);
     if (a <= maxClimbAngle) lo = m;
     else hi = m;
   }
 
   return { dx: dx * lo, dz: dz * lo };
+}
+
+/**
+ * Déplacement au sol avec montée automatique des marches et murets bas.
+ */
+export function resolveGroundMovement(x, z, feetY, dx, dz, radius, sampler, collisionWorld, mapHalf, player, frameId = 0) {
+  const moveDist = Math.hypot(dx, dz);
+  if (moveDist < 1e-8) {
+    return { x, z, y: sampler.sample(x, feetY, z, MAX_STEP_HEIGHT, 'snap') };
+  }
+
+  if (sampler.mode === 'analytical') {
+    const resolved = collisionWorld.resolve(x, z, dx, dz, radius, mapHalf, feetY, player, frameId);
+    const y = sampler.sample(resolved.x, feetY, resolved.z, 0.35, 'snap');
+    return { x: resolved.x, z: resolved.z, y };
+  }
+
+  const dirX = dx / moveDist;
+  const dirZ = dz / moveDist;
+
+  let stepY = feetY;
+  const probes = [0.1, radius + 0.08, radius + moveDist + 0.12];
+  for (const pd of probes) {
+    const sx = x + dirX * pd;
+    const sz = z + dirZ * pd;
+    const sy = sampler.sample(sx, feetY, sz, MAX_STEP_HEIGHT, 'move');
+    if (sy > stepY + 0.02 && sy <= feetY + MAX_STEP_HEIGHT + 0.08) {
+      stepY = Math.max(stepY, sy);
+    }
+  }
+
+  const endY = sampler.sample(x + dx, feetY, z + dz, MAX_STEP_HEIGHT, 'move');
+  if (endY > stepY + 0.02 && endY <= feetY + MAX_STEP_HEIGHT + 0.08) {
+    stepY = Math.max(stepY, endY);
+  }
+
+  const collisionFeetY = stepY > feetY + 0.03 ? stepY : feetY;
+  const resolved = collisionWorld.resolve(x, z, dx, dz, radius, mapHalf, collisionFeetY, player, frameId);
+  const finalY = sampler.sample(resolved.x, collisionFeetY, resolved.z, 0.35, 'snap');
+
+  return { x: resolved.x, z: resolved.z, y: finalY };
 }

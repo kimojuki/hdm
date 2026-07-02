@@ -1,136 +1,90 @@
 import * as THREE from 'three';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { loadPlayer, updatePlayerAnimation } from './player.js';
 import { InputManager } from './controls.js';
-import {
-  sampleTerrainHeightAtFeet,
-  limitMovementBySlope,
-  snapObjectBaseToSurface,
-} from './terrain.js';
-import { loadMecha01, initEnemy, updateEnemy, ENEMY_COLLISION_RADIUS } from './enemy.js';
-import { CollisionWorld } from './collisions.js';
+import { limitMovementBySlope, resolveGroundMovement, MAX_STEP_HEIGHT } from './terrain.js';
+import { updateEnemy } from './enemy.js';
 import { CameraController, bindCameraInput, getCameraRelativeMove } from './cameraController.js';
+import { MapEditor } from './mapEditor.js';
+import { SceneManager } from './sceneManager.js';
+import { loadMissionMap } from './missionMap.js';
+import { PlayerSession } from './playerSession.js';
+import { PlayerBase } from './playerBase.js';
+import { LocationMenu, LOCATION } from './locationMenu.js';
 
-const ENEMY_LAYOUT = [
-  { x: 8, z: 0, rot: Math.PI },
-  { x: 12, z: 2, rot: Math.PI },
-  { x: -6, z: 10, rot: 0.8 },
-];
-
-const PLANT_MODELS = [
-  'Desert_plant_001.fbx',
-  'Desert_plant_003.fbx',
-  'Desert_plant_005.fbx',
-  'Desert_plant_007.fbx',
-  'Desert_plant_009.fbx',
-  'Desert_plant_011.fbx',
-  'Desert_plant_013.fbx',
-  'Desert_plant_015.fbx',
-  'Desert_plant_017.fbx',
-  'Desert_plant_019.fbx',
-];
-
-const PLANT_LAYOUT = [
-  { x: -18, z: -12, model: 0, rot: 0.4, scale: 1.1 },
-  { x: -8, z: -20, model: 1, rot: 1.2, scale: 0.9 },
-  { x: 4, z: -16, model: 2, rot: 2.1, scale: 1.3 },
-  { x: 14, z: -10, model: 3, rot: 0.8, scale: 1.0 },
-  { x: 22, z: -18, model: 4, rot: 3.5, scale: 1.2 },
-  { x: -22, z: 2, model: 5, rot: 1.8, scale: 0.85 },
-  { x: -12, z: 8, model: 6, rot: 4.2, scale: 1.15 },
-  { x: 0, z: 6, model: 7, rot: 0.2, scale: 1.4 },
-  { x: 10, z: 4, model: 8, rot: 2.7, scale: 0.95 },
-  { x: 20, z: 10, model: 9, rot: 5.1, scale: 1.1 },
-  { x: -16, z: 18, model: 0, rot: 3.0, scale: 1.0 },
-  { x: -4, z: 22, model: 2, rot: 1.5, scale: 1.25 },
-  { x: 8, z: 20, model: 4, rot: 0.6, scale: 0.9 },
-  { x: 18, z: 16, model: 6, rot: 4.8, scale: 1.05 },
-  { x: -24, z: -6, model: 8, rot: 2.3, scale: 1.2 },
-  { x: 26, z: 0, model: 1, rot: 1.1, scale: 1.0 },
-  { x: 6, z: -8, model: 3, rot: 3.9, scale: 0.8 },
-  { x: -6, z: -4, model: 5, rot: 0.9, scale: 1.35 },
-  { x: 16, z: -4, model: 7, rot: 2.0, scale: 1.1 },
-  { x: -2, z: 14, model: 9, rot: 4.5, scale: 0.95 },
-];
-
-const MAP_SIZE = 60;
-const MAP_HALF = MAP_SIZE / 2 - 2;
 const PLAYER_RADIUS = 0.42;
+const SHOW_DEBUG = false;
 const MOVE_SPEED = 8;
 const JUMP_SPEED = 7.5;
 const GRAVITY = 22;
 const MAX_CLIMB_ANGLE = Math.PI / 3.2;
 const GROUND_SNAP = 0.08;
+const DPR_CAP = 1.25;
+const SHADOW_MAP_SIZE = 1024;
+const SHADOW_FOLLOW_HALF = 26;
 
 const app = document.getElementById('app');
 const loadingEl = document.getElementById('loading');
+const titleEl = document.getElementById('title');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, DPR_CAP));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xc9a86c);
-scene.fog = new THREE.Fog(0xc9a86c, 40, 90);
+scene.fog = new THREE.Fog(0xc9a86c, 70, 190);
 
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
 
 const ambient = new THREE.AmbientLight(0xffe8c0, 0.55);
 scene.add(ambient);
 
-const sun = new THREE.DirectionalLight(0xfff4d6, 1.4);
-sun.position.set(20, 35, 15);
+const defaultSun = {
+  offset: new THREE.Vector3(20, 35, 15),
+  intensity: 1.4,
+};
+const baseSun = {
+  offset: new THREE.Vector3(18, 28, 12),
+  intensity: 0.85,
+};
+let activeSunProfile = defaultSun;
+
+function applySunProfile(profile) {
+  activeSunProfile = profile;
+  sun.intensity = profile.intensity;
+}
+
+const sun = new THREE.DirectionalLight(0xfff4d6, defaultSun.intensity);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 sun.shadow.camera.near = 1;
-sun.shadow.camera.far = 80;
-sun.shadow.camera.left = -35;
-sun.shadow.camera.right = 35;
-sun.shadow.camera.top = 35;
-sun.shadow.camera.bottom = -35;
-sun.shadow.bias = -0.0005;
+sun.shadow.camera.far = 90;
+sun.shadow.bias = -0.0004;
+sun.shadow.normalBias = 0.02;
+applySunProfile(defaultSun);
 scene.add(sun);
+sun.target.position.set(0, 0, 0);
+scene.add(sun.target);
+
+function updateSunForPlayer(px, pz) {
+  const off = activeSunProfile.offset;
+  sun.position.set(px + off.x, off.y, pz + off.z);
+  sun.target.position.set(px, 0, pz);
+  const h = SHADOW_FOLLOW_HALF;
+  sun.shadow.camera.left = -h;
+  sun.shadow.camera.right = h;
+  sun.shadow.camera.top = h;
+  sun.shadow.camera.bottom = -h;
+  sun.shadow.camera.updateProjectionMatrix();
+}
 
 const hemi = new THREE.HemisphereLight(0xffe8c0, 0x8b6914, 0.35);
 scene.add(hemi);
-
-function createGround() {
-  const groundGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE, 32, 32);
-  const positions = groundGeo.attributes.position;
-
-  for (let i = 0; i < positions.count; i++) {
-    const x = positions.getX(i);
-    const y = positions.getY(i);
-    const wave = Math.sin(x * 0.15) * Math.cos(y * 0.12) * 0.4;
-    const dune = Math.sin((x + y) * 0.08) * 0.6;
-    positions.setZ(i, wave + dune);
-  }
-  groundGeo.computeVertexNormals();
-
-  const groundMat = new THREE.MeshStandardMaterial({
-    color: 0xc4a060,
-    roughness: 0.95,
-    metalness: 0.0,
-  });
-
-  const ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  scene.add(ground);
-
-  const gridHelper = new THREE.GridHelper(MAP_SIZE, 30, 0x9a7a40, 0x9a7a40);
-  gridHelper.position.y = 0.02;
-  gridHelper.material.opacity = 0.15;
-  gridHelper.material.transparent = true;
-  scene.add(gridHelper);
-
-  return ground;
-}
 
 function loadTexture(url, nearest = true) {
   return new Promise((resolve) => {
@@ -151,202 +105,331 @@ function loadTexture(url, nearest = true) {
   });
 }
 
-function prepareFbxModel(fbx, texture) {
-  fbx.traverse((child) => {
-    if (!child.isMesh) return;
-    child.castShadow = true;
-    child.receiveShadow = true;
-    if (texture) {
-      child.material = new THREE.MeshStandardMaterial({
-        map: texture,
-        roughness: 0.9,
-        metalness: 0.02,
-      });
-    }
-  });
-  return fbx;
-}
-
-async function loadFbxPlacements({ basePath, models, layout, texture, unitScale = 0.01, collisionMargin = 0.06 }) {
-  const loader = new FBXLoader();
-  const cache = new Map();
-  const group = new THREE.Group();
-  const instances = [];
-
-  const loadModel = async (filename) => {
-    if (cache.has(filename)) return cache.get(filename);
-    const fbx = await loader.loadAsync(`${basePath}/${filename}`);
-    const prepared = prepareFbxModel(fbx, texture);
-    cache.set(filename, prepared);
-    return prepared;
-  };
-
-  const uniqueModels = [...new Set(layout.map((p) => models[p.model]))];
-  await Promise.all(uniqueModels.map(loadModel));
-
-  for (const placement of layout) {
-    const filename = models[placement.model];
-    const instance = cache.get(filename).clone();
-    instance.position.set(placement.x, 0, placement.z);
-    instance.rotation.y = placement.rot;
-    instance.scale.setScalar(placement.scale * unitScale);
-    group.add(instance);
-    instances.push({ object: instance, collisionMargin });
-  }
-
-  return { group, instances };
-}
-
-function placePlantsOnGround(instances, groundMesh) {
-  const surface = [groundMesh];
-  for (const { object } of instances) {
-    snapObjectBaseToSurface(object, surface);
-  }
-}
-
-async function loadPlants(texture) {
-  return loadFbxPlacements({
-    basePath: '/solmap1/Fbx',
-    models: PLANT_MODELS,
-    layout: PLANT_LAYOUT,
-    texture,
-    unitScale: 0.01,
-    collisionMargin: 0.05,
-  });
-}
-
-function updateCamera(playerPos, dt, cameraCtrl) {
-  cameraCtrl.applyToCamera(camera, playerPos, dt);
-}
-
 const input = new InputManager(renderer.domElement);
-const cameraCtrl = new CameraController();
+const cameraCtrl = new CameraController({
+  distance: 10.8,
+  lookHeight: 1.1,
+  initialPitch: 0.58,
+});
 bindCameraInput(renderer.domElement, cameraCtrl);
 const clock = new THREE.Clock();
+
+const sceneManager = new SceneManager(scene);
+const playerSession = new PlayerSession();
+
 let player;
-let terrainRoots = [];
-let groundMesh;
-const enemies = [];
-const collisionWorld = new CollisionWorld();
+let mapEditor = null;
+let debugGroup = null;
+let textures = null;
+let currentLocation = null;
+let switching = false;
+let simFrame = 0;
 const playerPhysics = { velocityY: 0, onGround: true };
 
-groundMesh = createGround();
-terrainRoots = [groundMesh];
+function getCollisionWorld() {
+  return sceneManager.getCollisionWorld();
+}
 
-Promise.all([
-  loadTexture('/solmap1/Textures/T_Desert_plants.png'),
-])
-  .then(async ([plantTexture]) => {
-    const plantsData = await loadPlants(plantTexture);
+function getGroundSampler() {
+  return sceneManager.getGroundSampler();
+}
 
-    placePlantsOnGround(plantsData.instances, groundMesh);
-    scene.add(plantsData.group);
+function getMapHalf() {
+  return sceneManager.getMapHalf();
+}
 
-    terrainRoots = [groundMesh];
-    plantsData.group.updateMatrixWorld(true);
+function getEnemies() {
+  return sceneManager.isInMissionMap() ? (sceneManager.missionMap?.enemies ?? []) : [];
+}
 
-    for (const placement of ENEMY_LAYOUT) {
-      const enemy = await loadMecha01();
-      initEnemy(enemy, placement.x, placement.z, placement.rot, groundMesh);
-      scene.add(enemy);
-      enemies.push(enemy);
-      collisionWorld.addDynamic(enemy, 0.1);
+function setTitle(location) {
+  if (!titleEl) return;
+  titleEl.textContent = location === LOCATION.BASE
+    ? 'HDM — Base personnelle'
+    : 'HDM — Sol Map 1';
+}
+
+async function ensureTextures() {
+  if (textures) return textures;
+  textures = {
+    plant: await loadTexture('/solmap1/Textures/T_Desert_plants.png'),
+    building: await loadTexture('/batiment/map1/texture/T_Spase.png'),
+    mountain: await loadTexture('/environement/montagne/Textures/T_Mountains_desert.png'),
+  };
+  return textures;
+}
+
+async function ensureMissionMap() {
+  if (sceneManager.missionMap) return sceneManager.missionMap;
+  const missionMap = await loadMissionMap(await ensureTextures());
+  sceneManager.missionMap = missionMap;
+  return missionMap;
+}
+
+async function ensurePlayerBase() {
+  const BASE_VERSION = 16;
+  if (sceneManager.playerBase?.loaded && sceneManager.playerBase.layoutVersion === BASE_VERSION) {
+    return sceneManager.playerBase;
+  }
+  if (sceneManager.playerBase) {
+    sceneManager.playerBase.dispose();
+    sceneManager.playerBase = null;
+    playerSession.base = new PlayerBase(playerSession.playerId);
+  }
+  const base = await playerSession.connect();
+  base.layoutVersion = BASE_VERSION;
+  sceneManager.playerBase = base;
+
+  if (!base.debugGroup) {
+    const dbg = base.createDebugGroup();
+    dbg.visible = SHOW_DEBUG;
+    scene.add(dbg);
+  }
+
+  return base;
+}
+
+function ensureMapEditor(missionMap) {
+  if (mapEditor) return mapEditor;
+  mapEditor = new MapEditor({
+    canvas: renderer.domElement,
+    camera,
+    scene,
+    getTerrainRoots: () => missionMap.terrainRoots,
+    getMapHalf: () => missionMap.mapHalf,
+    textures,
+    collisionWorld: missionMap.collisionWorld,
+    mountainsGroup: missionMap.mountainsGroup,
+  });
+  mapEditor.registerExisting(missionMap.editorEntries);
+  return mapEditor;
+}
+
+function spawnOnMissionMap(missionMap) {
+  const sampler = sceneManager.getGroundSampler();
+  const collisionWorld = missionMap.collisionWorld;
+  const spawnY = sampler.sample(0, 0, 0, 0.35, 'snap');
+  const safeSpawn = collisionWorld.findSafePosition(0, 0, PLAYER_RADIUS, spawnY);
+  const safeSpawnY = sampler.sample(safeSpawn.x, spawnY, safeSpawn.z, 0.35, 'snap');
+  player.position.set(safeSpawn.x, safeSpawnY, safeSpawn.z);
+}
+
+function spawnOnBase(base) {
+  const spawnWorld = base.getInteriorSpawnWorldPosition();
+  const sampler = base.getGroundSampler();
+  const groundY = sampler.sample(spawnWorld.x, spawnWorld.y + 2, spawnWorld.z, 0.35, 'snap');
+  player.position.set(spawnWorld.x, groundY, spawnWorld.z);
+}
+
+async function switchToLocation(location) {
+  if (switching || location === currentLocation) return;
+  switching = true;
+  locationMenu.setBusy(true);
+
+  if (mapEditor?.isActive()) {
+    mapEditor.toggle();
+  }
+
+  const prevWorld = getCollisionWorld();
+  if (prevWorld && player) {
+    prevWorld.removeDynamic(player);
+  }
+
+  try {
+    if (location === LOCATION.MISSION) {
+      applySunProfile(defaultSun);
+      ambient.intensity = 0.55;
+      ambient.color.setHex(0xffe8c0);
+      hemi.intensity = 0.35;
+      hemi.color.setHex(0xffe8c0);
+      hemi.groundColor.setHex(0x8b6914);
+      renderer.toneMappingExposure = 1.1;
+      const missionMap = await ensureMissionMap();
+      await sceneManager.enterMissionMap(missionMap);
+      ensureMapEditor(missionMap);
+      spawnOnMissionMap(missionMap);
+      debugGroup = missionMap.debugGroup;
+      debugGroup.visible = SHOW_DEBUG;
+    } else {
+      applySunProfile(baseSun);
+      ambient.intensity = 0.5;
+      ambient.color.setHex(0xc8d8ff);
+      hemi.intensity = 0.35;
+      hemi.color.setHex(0x88aaff);
+      hemi.groundColor.setHex(0x1a0828);
+      renderer.toneMappingExposure = 1.35;
+      const base = await ensurePlayerBase();
+      await sceneManager.enterPlayerBase(base);
+      spawnOnBase(base);
+      debugGroup = base.debugGroup;
+      if (debugGroup) debugGroup.visible = SHOW_DEBUG;
     }
 
-    player = await loadPlayer();
-    const spawnY = sampleTerrainHeightAtFeet(0, 0, 0, terrainRoots);
-    player.position.set(0, spawnY, 0);
+    const collisionWorld = getCollisionWorld();
+    collisionWorld.addDynamic(player, 0.06);
     playerPhysics.velocityY = 0;
     playerPhysics.onGround = true;
-    collisionWorld.addDynamic(player, 0.06);
-    scene.add(player);
 
+    currentLocation = location;
+    locationMenu.setActive(location);
+    setTitle(location);
     cameraCtrl.applyToCamera(camera, player.position, 1);
-
-    loadingEl.classList.add('hidden');
-    input.focus();
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error(err);
-    loadingEl.querySelector('p').textContent = 'Erreur de chargement';
-  });
+    locationMenu.setBusy(false);
+    switching = false;
+    throw err;
+  }
+
+  locationMenu.setBusy(false);
+  switching = false;
+}
+
+const locationMenu = new LocationMenu({
+  onSelect: (location) => {
+    switchToLocation(location).catch((err) => {
+      console.error('[HDM] Changement de lieu échoué:', err);
+    });
+  },
+});
+
+async function initGame() {
+  player = await loadPlayer();
+  scene.add(player);
+
+  await switchToLocation(LOCATION.MISSION);
+
+  loadingEl.classList.add('hidden');
+  input.focus();
+}
+
+initGame().catch((err) => {
+  console.error(err);
+  const msg = loadingEl.querySelector('p');
+  if (msg) {
+    msg.textContent = err.message?.includes('Root')
+      ? 'Prefab base manquant — voir assets/batiment/base/'
+      : 'Erreur de chargement';
+  }
+});
 
 function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.05);
 
-  if (player) {
-    const moveInput = input.getMoveVector();
-    const isMoving = moveInput.x !== 0 || moveInput.y !== 0;
+  if (player && !switching) {
+    const editorActive = mapEditor?.isActive() && sceneManager.isInMissionMap();
 
-    if (input.consumeJump() && playerPhysics.onGround) {
-      playerPhysics.velocityY = JUMP_SPEED;
-      playerPhysics.onGround = false;
-    }
+    if (editorActive) {
+      mapEditor.update();
+      cameraCtrl.applyToCamera(camera, player.position, dt);
+    } else {
+      const moveInput = input.getMoveVector();
+      const isMoving = moveInput.x !== 0 || moveInput.y !== 0;
+      const collisionWorld = getCollisionWorld();
+      const groundSampler = getGroundSampler();
+      const mapHalf = getMapHalf();
+      simFrame++;
 
-    playerPhysics.velocityY -= GRAVITY * dt;
-    player.position.y += playerPhysics.velocityY * dt;
-
-    if (isMoving) {
-      const dir = getCameraRelativeMove(moveInput, cameraCtrl.getYaw());
-      const len = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
-      const nx = dir.x / len;
-      const nz = dir.z / len;
-      let dx = nx * MOVE_SPEED * dt;
-      let dz = nz * MOVE_SPEED * dt;
-
-      if (playerPhysics.onGround) {
-        const limited = limitMovementBySlope(
-          player.position.x,
-          player.position.z,
-          dx,
-          dz,
-          terrainRoots,
-          MAX_CLIMB_ANGLE,
-        );
-        dx = limited.dx;
-        dz = limited.dz;
+      if (!collisionWorld) {
+        if (player) updateSunForPlayer(player.position.x, player.position.z);
+        renderer.render(scene, camera);
+        return;
       }
 
-      const resolved = collisionWorld.resolve(
+      if (input.consumeJump() && playerPhysics.onGround) {
+        playerPhysics.velocityY = JUMP_SPEED;
+        playerPhysics.onGround = false;
+      }
+
+      playerPhysics.velocityY -= GRAVITY * dt;
+      player.position.y += playerPhysics.velocityY * dt;
+
+      if (isMoving) {
+        const dir = getCameraRelativeMove(moveInput, cameraCtrl.getYaw());
+        const len = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
+        const nx = dir.x / len;
+        const nz = dir.z / len;
+        let dx = nx * MOVE_SPEED * dt;
+        let dz = nz * MOVE_SPEED * dt;
+
+        if (playerPhysics.onGround) {
+          const limited = limitMovementBySlope(
+            player.position.x,
+            player.position.z,
+            dx,
+            dz,
+            groundSampler,
+            MAX_CLIMB_ANGLE,
+            player.position.y,
+          );
+          dx = limited.dx;
+          dz = limited.dz;
+
+          const moved = resolveGroundMovement(
+            player.position.x,
+            player.position.z,
+            player.position.y,
+            dx,
+            dz,
+            PLAYER_RADIUS,
+            groundSampler,
+            collisionWorld,
+            mapHalf,
+            player,
+            simFrame,
+          );
+          player.position.x = moved.x;
+          player.position.z = moved.z;
+          player.position.y = moved.y;
+        } else {
+          const resolved = collisionWorld.resolve(
+            player.position.x,
+            player.position.z,
+            dx,
+            dz,
+            PLAYER_RADIUS,
+            mapHalf,
+            player.position.y,
+            player,
+            simFrame,
+          );
+          player.position.x = resolved.x;
+          player.position.z = resolved.z;
+        }
+        player.rotation.y = Math.atan2(nx, nz);
+      }
+
+      const stepTolerance = isMoving && playerPhysics.onGround ? MAX_STEP_HEIGHT : 0.35;
+      const groundY = groundSampler.sample(
         player.position.x,
-        player.position.z,
-        dx,
-        dz,
-        PLAYER_RADIUS,
-        MAP_HALF,
         player.position.y,
-        player,
+        player.position.z,
+        stepTolerance,
+        isMoving ? 'move' : 'snap',
       );
+      if (player.position.y <= groundY + GROUND_SNAP && playerPhysics.velocityY <= 0) {
+        player.position.y = groundY;
+        playerPhysics.velocityY = 0;
+        playerPhysics.onGround = true;
+      } else if (player.position.y < groundY - 0.12 && playerPhysics.velocityY <= 0) {
+        player.position.y = groundY;
+        playerPhysics.velocityY = 0;
+        playerPhysics.onGround = true;
+      } else {
+        playerPhysics.onGround = false;
+      }
 
-      player.position.x = resolved.x;
-      player.position.z = resolved.z;
-      player.rotation.y = Math.atan2(nx, nz);
-    }
+      updatePlayerAnimation(player, dt, isMoving, 1);
+      cameraCtrl.applyToCamera(camera, player.position, dt);
 
-    const groundY = sampleTerrainHeightAtFeet(
-      player.position.x,
-      player.position.y,
-      player.position.z,
-      terrainRoots,
-    );
-    if (player.position.y <= groundY + GROUND_SNAP && playerPhysics.velocityY <= 0) {
-      player.position.y = groundY;
-      playerPhysics.velocityY = 0;
-      playerPhysics.onGround = true;
-    } else if (player.position.y < groundY - 0.12 && playerPhysics.velocityY <= 0) {
-      player.position.y = groundY;
-      playerPhysics.velocityY = 0;
-      playerPhysics.onGround = true;
-    } else {
-      playerPhysics.onGround = false;
-    }
+      if (sceneManager.isInMissionMap()) {
+        for (const enemy of getEnemies()) {
+          updateEnemy(enemy, dt, groundSampler, mapHalf, collisionWorld, simFrame);
+        }
+      }
 
-    updatePlayerAnimation(player, dt, isMoving, 1);
-    updateCamera(player.position, dt, cameraCtrl);
-
-    for (const enemy of enemies) {
-      updateEnemy(enemy, dt, terrainRoots, MAP_HALF, collisionWorld);
+      updateSunForPlayer(player.position.x, player.position.z);
     }
   }
 
@@ -355,8 +438,31 @@ function animate() {
 
 animate();
 
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyH' && debugGroup) {
+    debugGroup.visible = !debugGroup.visible;
+    sceneManager.playerBase?.setDebugVisible(debugGroup.visible);
+  }
+
+  if (e.code === 'KeyE' && mapEditor && sceneManager.isInMissionMap() && !e.repeat) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    mapEditor.toggle();
+    e.preventDefault();
+  }
+
+  if (e.code === 'KeyM' && !e.repeat) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    const next = currentLocation === LOCATION.MISSION ? LOCATION.BASE : LOCATION.MISSION;
+    switchToLocation(next).catch(console.error);
+    e.preventDefault();
+  }
+});
+
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, DPR_CAP));
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+export { sceneManager, switchToLocation };

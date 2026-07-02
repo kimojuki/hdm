@@ -5,17 +5,19 @@ const _look = new THREE.Vector3();
 
 export class CameraController {
   constructor({
-    distance = 8.6,
+    distance = 10.8,
     minDistance = 4.5,
     maxDistance = 16,
     minPitch = 0.25,
     maxPitch = 1.15,
-    lookHeight = 1.3,
+    lookHeight = 1.1,
+    initialYaw = 0,
+    initialPitch = 0.58,
     touchSensitivity = 0.0042,
     mouseSensitivity = 0.0028,
   } = {}) {
-    this.yaw = 0;
-    this.pitch = 0.62;
+    this.yaw = initialYaw;
+    this.pitch = THREE.MathUtils.clamp(initialPitch, minPitch, maxPitch);
     this.distance = distance;
     this.targetDistance = distance;
     this.minDistance = minDistance;
@@ -87,7 +89,8 @@ function isUiTarget(target) {
     target.closest('#joystick-zone')
     || target.closest('#jump-btn')
     || target.closest('#loading')
-    || target.closest('#admin-link'),
+    || target.closest('#admin-link')
+    || target.closest('#map-editor'),
   );
 }
 

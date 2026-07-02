@@ -1,7 +1,7 @@
 # HDM — Référence technique du jeu
 
 > **Document vivant — OBLIGATOIRE** : toute modification importante du projet (gameplay, architecture, assets, constantes, bugs résolus, décisions techniques) doit être reflétée ici **dans la même session**, avant de terminer.
-> Dernière mise à jour : 2026-06-26
+> Dernière mise à jour : 2026-07-02
 
 ---
 
@@ -38,22 +38,27 @@ hdm/
 ├── assets/                    # Servis à la racine URL via Vite publicDir
 │   ├── personnage.fbx
 │   ├── solmap1/               # Plantes désert (FBX + texture)
-│   ├── environement/montagne/ # Collines (FBX — désactivées en jeu pour l'instant)
+│   ├── environement/montagne/ # Montagnes/collines/plateaux (anneau autour de la map)
 │   ├── ennemie/Package/       # Mecha01 (OBJ/MTL voxel)
-│   ├── batiment/              # Non utilisé en jeu
+│   ├── batiment/              # Modèle base personnelle + pack colony (map1)
+│   │   └── base.fbx           # Modèle « base » (FBX/GLB/GLTF acceptés)
 │   └── guns/                  # AK47 équipé sur le joueur (GLB)
 ├── docs/
 │   └── REFERENCE.md           # ← Ce document
 ├── scripts/
 │   └── build-asset-manifest.mjs
 ├── src/
-│   ├── main.js                # Point d'entrée jeu, scène, boucle
+│   ├── main.js                # Point d'entrée jeu, connexion → Base personnelle
+│   ├── playerBase.js          # Instance Base joueur (hiérarchie, spawn, collisions)
+│   ├── playerSession.js       # Session joueur + ID persistant
+│   ├── sceneManager.js        # Routage scène (Base / mission)
+│   ├── missionMap.js          # Map désert (chargement différé)
 │   ├── player.js              # Chargement + animations procédurales joueur
 │   ├── weapons.js             # Chargement + attache armes (AK47)
 │   ├── enemy.js               # Chargement + placement ennemis
 │   ├── controls.js            # Clavier + joystick tactile
 │   ├── terrain.js             # Hauteur sol, alignement objets, pentes
-│   ├── collisions.js          # Système AABB (prêt, non branché en jeu)
+│   ├── collisions.js          # Moteur collision hybride (mesh BVH + AABB)
 │   └── admin/                 # Outil de prévisualisation assets
 ├── index.html
 ├── admin.html
@@ -66,14 +71,19 @@ hdm/
 
 ### 3.1 Initialisation (`main.js`)
 
+**À la connexion**, le joueur apparaît dans **sa Base personnelle** (instance isolée), pas dans le hub désert partagé.
+
 Ordre de chargement :
 
-1. Création du sol ondulé (`createGround`)
-2. Chargement texture plantes + placement `PLANT_LAYOUT`
-3. Alignement plantes sur le sol (`snapObjectBaseToSurface`)
-4. Spawn ennemis `ENEMY_LAYOUT` (Mecha01)
-5. Chargement joueur (`loadPlayer`) au spawn `(0, 0)`
-6. Masquage écran de chargement
+1. Création session joueur (`PlayerSession` — ID persistant `localStorage`)
+2. Chargement modèle `assets/batiment/base` (`.fbx`, `.glb` ou `.gltf`)
+3. Montage hiérarchie Base : `Base`, `SpawnPoints`, `InteractiveObjects`, `NPC`, `MissionSelection`, `Equipment`
+4. Sol intérieur + collisions mesh BVH précises sur le bâtiment
+5. Placement spawn(s) automatique au centre du bâtiment
+6. Chargement joueur (`loadPlayer`) au point de spawn
+7. Masquage écran de chargement
+
+La **map mission désert** (`missionMap.js` — bâtiments hub, montagnes, plantes, ennemis) est chargée **à la demande** uniquement (éditeur map futur / sélection mission).
 
 ### 3.2 Boucle `animate()` (chaque frame)
 
@@ -89,12 +99,37 @@ input → saut (si au sol)
      → render
 ```
 
-### 3.3 Constantes gameplay (`main.js`)
+### 3.4 Base personnelle (`playerBase.js`, `playerSession.js`)
+
+| Élément | Détail |
+|---------|--------|
+| Modèle | `/batiment/base.{fbx,glb,gltf}` ou `/batiment/base/base.*` |
+| Instance | Une `PlayerBase` par `playerId` (UUID localStorage) |
+| Collisions | BVH mesh complet (pas `steepOnly`) — suit la géométrie visible |
+| Spawn | `spawn_main` + 2 alternates, auto depuis bbox du bâtiment |
+| Debug | **H** — wireframes collisions (rouge) + marqueurs spawn (vert) |
+| Futur | Invitations, sauvegarde décor, équipement via groupes dédiés |
+
+Hiérarchie Three.js :
+
+```
+PlayerBase_<playerId>
+├── BaseGround
+├── Base                 ← modèle 3D
+├── SpawnPoints
+├── InteractiveObjects   ← vide (futur)
+├── NPC                  ← vide (futur)
+├── MissionSelection     ← vide (futur)
+└── Equipment            ← vide (futur)
+```
+
+### 3.5 Constantes gameplay (`main.js`)
 
 | Constante | Valeur | Rôle |
 |-----------|--------|------|
-| `MAP_SIZE` | 60 | Taille du sol |
-| `MAP_HALF` | 28 | Limite XZ joueur (`MAP_SIZE/2 - 2`) |
+| `MAP_SIZE` | 110 | Taille du sol |
+| `MAP_HALF` (base) | 48 | Limite XZ dans la Base personnelle |
+| `MAP_HALF` (mission) | 68 | Limite XZ map désert (`missionMap.js`) |
 | `MOVE_SPEED` | 8 | Vitesse marche (unités/s) |
 | `JUMP_SPEED` | 7.5 | Impulsion saut |
 | `GRAVITY` | 22 | Gravité |
@@ -131,8 +166,8 @@ Le groupe `player` positionne les **pieds** en monde ; `player.position.y` = hau
 
 **API** :
 - `loadAk47()` — charge le mesh AK47
-- `attachWeaponToPlayer(player, weapon)` — attache au squelette
-- `equipAk47(player)` — charge + équipe
+- `attachWeaponToPlayer(player, weapon, modelPivot)` — attache au pivot joueur
+- `equipAk47(player, modelPivot)` — charge + équipe
 
 ### 4.3 Contrôles (`controls.js`)
 
@@ -170,22 +205,37 @@ hauteur = wave + dune
 **`terrainRoots`** : liste des meshes utilisés pour le raycast pieds du joueur.
 Actuellement : `[groundMesh]` uniquement.
 
-### 4.5 Décor / plantes
+### 4.5 Bâtiments / base (`main.js`)
+
+- **Assets** : `assets/batiment/map1/fbx/*.fbx` + texture `T_Spase.png`
+- **Layout** : base centrale cohérente via `BUILDING_LAYOUT` (hub, recherche, énergie, sections de liaison)
+- **Placement** : `snapObjectBaseToSurface` pour poser chaque bâtiment sur le terrain
+- **Collisions** : obstacles statiques activés via `collisionWorld.addStaticFromObject`
+- **Rôle gameplay** : crée des couloirs et points de blocage autour du spawn
+
+### 4.6 Décor / plantes
 
 - **20 plantes** disposées via `PLANT_LAYOUT` (FBX `solmap1/Fbx/`)
 - **Échelle** : `placement.scale * 0.01` (unités FBX → mètres jeu)
 - **Collision** : aucune — le joueur traverse les plantes
 - **Placement** : `snapObjectBaseToSurface` sur le sol uniquement (pas sur les collines)
 
-### 4.6 Collines / montagnes
+### 4.7 Collines / montagnes
 
-- Assets : `environement/montagne/Fbx/Hill_desert_*.fbx`
-- **État actuel : retirées du jeu** (juin 2026) pour simplifier le debug ennemis et éviter les placements sous les meshes
-- Le code de chargement (`HILL_LAYOUT`, `loadHills`) a été supprimé de `main.js`
-- `terrain.js` conserve les helpers collines pour réactivation future
+- Assets : `environement/montagne/Fbx/{Hill,Mountain,Plateau}_desert_*.fbx` + texture `T_Mountains_desert.png`
+- **Layout** : anneau généré (`buildMountainRingLayout` dans `prefabs.js`) — double mur
+  (rayons 64 et 55) + renforts diagonaux, ~70 instances, `unitScale 0.022`
+- **Marchables** : ajoutées à `terrainRoots` → le joueur monte les pentes douces
+  via raycast (`sampleTerrainHeightAtFeet` + `limitMovementBySlope`)
+- **Collision parois** : `addStaticFromObject(obj, { steepOnly: true })` — seuls les
+  triangles raides (normale monde `y < WALKABLE_NORMAL_Y = 0.55`, aligné sur
+  `MAX_CLIMB_ANGLE`) forment le collider BVH. Les pentes douces et sommets plats
+  sont exclus : aucun blocage invisible, les falaises bloquent exactement où le visuel l'exige
+- **Anti-chevauchement** : `removeMountainsOverlappingBuildings` retire toute montagne
+  dont la bbox touche un bâtiment (padding 10)
 - Quand réactivées : penser à `isUnderHill` pour plantes/ennemis + `sweepMovementAgainstHills` pour éviter de traverser les parois en sautant
 
-### 4.7 Ennemis (`enemy.js`)
+### 4.8 Ennemis (`enemy.js`)
 
 - **Modèle actuel** : Mecha01 (`ennemie/Package/Mecha01.obj` + `.mtl`)
 - **Format** : MagicaVoxel → OBJ/MTL, palette texture `Mecha01.png` (**manquante** dans assets → rendu blanc/gris)
@@ -207,39 +257,68 @@ Actuellement : `[groundMesh]` uniquement.
 **Positions actuelles** (`ENEMY_LAYOUT`) :
 
 ```js
-{ x: 8,  z: 0,  rot: Math.PI }   // devant le spawn
-{ x: 12, z: 2,  rot: Math.PI }
-{ x: -6, z: 10, rot: 0.8 }
+{ x: 28,  z: -18, rot: Math.PI * 0.8 }
+{ x: 34,  z: 10,  rot: Math.PI * 0.65 }
+{ x: -30, z: 24,  rot: Math.PI * 1.2 }
 ```
 
 **Ajouter un ennemi** : étendre `ENEMY_LAYOUT` + `initEnemy` dans `main.js`.
 
-### 4.8 Collisions (`collisions.js`)
+### 4.9 Collisions (`collisions.js`)
 
 **Branché en jeu** via `collisionWorld` dans `main.js`.
 
 | Type | Méthode | Éléments |
 |------|---------|----------|
-| Statique (mesh) | `addStaticFromObject` | Bâtiments, collines (futur) |
+| Statique (mesh) | `addStaticFromObject` | Bâtiments de la base |
 | Dynamique (AABB) | `addDynamic` | Ennemis, joueur — recalcul chaque frame |
 | **Sans collision** | — | Plantes / petit décor |
 
-- `buildCollidersFromObject` : AABB par mesh (obstacles fixes)
-- `buildSimpleColliderFromObject` : une AABB globale (entités mobiles)
-- `resolve(excludeObject)` : cercle repoussé des boîtes XZ + filtre hauteur `feetY` (saut au-dessus)
+**Architecture hybride** :
+
+- `buildMeshCollider(object)` : un collider par bâtiment — géométrie fusionnée en
+  espace monde (`StaticGeometryGenerator` de three-mesh-bvh, transformations
+  position/rotation/scale intégrées) + `MeshBVH`. **Zéro padding** : la hitbox
+  est exactement la surface visible.
+- `buildSimpleColliderFromObject` : une AABB globale (entités mobiles simples)
+- Broad-phase : test bbox du collider avant toute requête BVH.
+- Narrow-phase : capsule joueur approximée par 3 sphères
+  (`CAPSULE_SAMPLE_HEIGHTS = [0.3, 0.85, 1.4]`) → `bvh.closestPointToPoint`
+  (API three-mesh-bvh 0.9 : retourne `{point, distance, faceIndex}`) →
+  repoussement horizontal de `radius - distance`.
+- `resolve(excludeObject)` : sous-étapes anti-tunneling (pas max `radius/2`,
+  8 max) ; AABB dynamiques puis surfaces mesh statiques exactes à chaque étape.
+- `findSafePosition` : spawn — vérifie aussi `isInsideStaticFootprint` (les
+  mesh colliders sont creux, la capsule au centre d'un bâtiment ne touche pas
+  les murs).
 - Rayons : joueur `0.42`, ennemi `ENEMY_COLLISION_RADIUS = 0.48`
 
-**Règle :** plantes et décor traversables ; tout le reste (ennemis, futurs bâtiments) bloque.
+**Règle :** plantes traversables ; bâtiments + ennemis bloquants.
 
-### 4.9 Caméra (`cameraController.js`)
+**Bug historique (cause des traversées)** : `closestPointToPoint` était appelé
+avec l'ancienne signature (target `Vector3`, retour distance). Depuis
+three-mesh-bvh 0.5+, le retour est un objet `{point, distance}` — l'ancien code
+comparait un objet à un nombre, toutes les collisions mesh étaient silencieusement
+ignorées.
+
+**Debug hitboxes** : wireframe rouge des colliders mesh exacts
+(`collisionWorld.createDebugGroup`), toggle en jeu avec la touche **H**,
+état initial via `SHOW_COLLISION_DEBUG` (`main.js`).
+
+**Test hors navigateur** : `node scripts/test-collisions.mjs` — charge de vrais
+FBX bâtiments et vérifie : bbox collider = bbox visuelle, pas de padding,
+pas de pénétration en marche/sprint, spawn sûr.
+
+### 4.10 Caméra (`cameraController.js`)
 
 - **Orbite 3e personne** : yaw + pitch + distance autour du joueur
 - **Mobile (priorité)** : glisser à droite de l'écran pour tourner ; pincement 2 doigts pour zoom
 - **Desktop** : glisser souris sur le canvas ; molette pour zoom
 - **Déplacement caméra-relative** : joystick/clavier alignés sur la direction de la vue (`getCameraRelativeMove`)
 - Limites : distance 4.5–16, pitch clampé
+- **Vue par défaut** : distance 10.8, `lookHeight` 1.1, pitch initial 0.58 (vue arrière plus reculée)
 
-### 4.10 Admin assets (`admin.html`)
+### 4.11 Admin assets (`admin.html`)
 
 - Grille par catégorie (personnages, armes, bâtiments, plantes, montagnes, ennemis)
 - **Renderer WebGL partagé** (une seule instance) + cache PNG miniatures
@@ -320,6 +399,15 @@ Utilise la **bbox des meshes visibles** (pas les nœuds vides FBX/OBJ).
 | 2026-06 | Fix orientation déplacement caméra-relative (forward/strafe corrigés) |
 | 2026-06 | AK47 équipée sur le joueur (`weapons.js`) + pose bras tenue d'arme |
 | 2026-06 | Pose deux mains Helldivers (`RIFLE_STANCE` + affinage IK léger des bras) |
+| 2026-07 | Map agrandie à 110×110 + base bâtiments connectés + collisions statiques |
+| 2026-07 | Végétation redistribuée en couronne extérieure + ennemis repositionnés |
+| 2026-07 | Hitboxes bâtiments resserrées (bbox géométrie mesh, pas bbox descendants) + debug lignes rouges |
+| 2026-07 | Collisions bâtiments migrées vers mesh collider BVH précis (marge 0) + wireframe debug |
+| 2026-07 | Résolution collision renforcée : multi-échantillons hauteur corps pour bloquer les traversées |
+| 2026-07 | Spawn joueur sécurisé hors bâtiments + fallback AABB locales anti-traversée résiduelle |
+| 2026-07 | **Refonte moteur collision** : fix API `closestPointToPoint` (cause racine des traversées), 1 collider mesh fusionné par bâtiment (`StaticGeometryGenerator`), zéro padding, capsule 3 sphères, toggle debug touche H, tests Node (`scripts/test-collisions.mjs`) |
+| 2026-07 | Map 140×140, relief sol enrichi, anneau montagnes double mur (`buildMountainRingLayout`), éditeur de map in-game (touche E : placer/sélectionner/déplacer/échelle/rotation/suppression + export JSON) |
+| 2026-07 | **Collisions montagnes précises** : collider BVH filtré aux triangles raides (`steepOnly`, seuil `WALKABLE_NORMAL_Y = 0.55`) — falaises bloquantes exactement sur le mesh, pentes douces marchables sans blocage invisible ; refresh auto via éditeur ; tests Node dédiés |
 
 ---
 
@@ -345,7 +433,7 @@ Cocher / mettre à jour au fur et à mesure :
 - [ ] IA ennemie (poursuite joueur, attaque)
 - [x] Arme équipée sur le joueur (AK47 GLB)
 - [ ] Tir / munitions / FX (`pew.glb`, `bullet1.glb`, etc.)
-- [ ] Bâtiments sur la map + collisions `CollisionWorld`
+- [x] Bâtiments sur la map + collisions `CollisionWorld`
 - [ ] HUD vie / munitions
 - [ ] Son
 - [ ] Optimisation mobile (LOD, réduction draw calls)
