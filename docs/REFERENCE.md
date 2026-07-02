@@ -29,6 +29,25 @@ npm run dev        # http://localhost:5173/
 
 Le script `npm run dev` régénère automatiquement le manifeste assets (`npm run assets:manifest`).
 
+### Déploiement Infomaniak
+
+Le dossier d'exécution Node doit **toujours** être `~/sites/helldivermobiel.com` (racine du site, **pas** `./hdm`).
+
+| Paramètre Manager | Valeur |
+|-------------------|--------|
+| Dossier d'exécution | `sites/helldivermobiel.com` |
+| Port | `4001` |
+| Build | `npm install && npm run build` |
+| Start | `npm start` |
+
+```bash
+cd ~/sites/helldivermobiel.com
+bash scripts/deploy.sh          # git pull + install + build
+PORT=4001 npm start             # sert dist/ via server.mjs
+```
+
+Migration unique si le dépôt était cloné dans `hdm/` : `bash scripts/migrate-to-site-root.sh`
+
 ---
 
 ## 2. Structure des fichiers
@@ -407,7 +426,7 @@ Utilise la **bbox des meshes visibles** (pas les nœuds vides FBX/OBJ).
 | 2026-07 | Spawn joueur sécurisé hors bâtiments + fallback AABB locales anti-traversée résiduelle |
 | 2026-07 | **Refonte moteur collision** : fix API `closestPointToPoint` (cause racine des traversées), 1 collider mesh fusionné par bâtiment (`StaticGeometryGenerator`), zéro padding, capsule 3 sphères, toggle debug touche H, tests Node (`scripts/test-collisions.mjs`) |
 | 2026-07 | Map 140×140, relief sol enrichi, anneau montagnes double mur (`buildMountainRingLayout`), éditeur de map in-game (touche E : placer/sélectionner/déplacer/échelle/rotation/suppression + export JSON) |
-| 2026-07 | **Collisions montagnes précises** : collider BVH filtré aux triangles raides (`steepOnly`, seuil `WALKABLE_NORMAL_Y = 0.55`) — falaises bloquantes exactement sur le mesh, pentes douces marchables sans blocage invisible ; refresh auto via éditeur ; tests Node dédiés |
+| 2026-07 | **Déploiement Infomaniak** : `server.mjs` + `npm start`, scripts `deploy.sh` / `migrate-to-site-root.sh`, racine site `~/sites/helldivermobiel.com` |
 
 ---
 
