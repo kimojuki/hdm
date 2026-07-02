@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test serveur HDM</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 40rem;
+        margin: 3rem auto;
+        padding: 1.5rem;
+        line-height: 1.5;
+      }
+      .ok { color: #0a7; font-weight: 700; font-size: 1.4rem; }
+      code { background: #f2f2f2; padding: 0.1rem 0.35rem; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <p class="ok">Serveur OK</p>
+    <p>Si tu vois cette page, Infomaniak sert correctement des fichiers HTML statiques.</p>
+    <p>Date navigateur : <span id="date"></span></p>
+    <script>
+      document.getElementById('date').textContent = new Date().toLocaleString('fr-FR');
+    </script>
+  </body>
+</html>

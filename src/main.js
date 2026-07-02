@@ -293,10 +293,17 @@ const locationMenu = new LocationMenu({
   },
 });
 
+function setLoadingStatus(text) {
+  const msg = loadingEl?.querySelector('p');
+  if (msg) msg.textContent = text;
+}
+
 async function initGame() {
+  setLoadingStatus('Chargement du personnage…');
   player = await loadPlayer();
   scene.add(player);
 
+  setLoadingStatus('Chargement de la map…');
   await switchToLocation(LOCATION.MISSION);
 
   loadingEl.classList.add('hidden');
@@ -309,7 +316,7 @@ initGame().catch((err) => {
   if (msg) {
     msg.textContent = err.message?.includes('Root')
       ? 'Prefab base manquant — voir assets/batiment/base/'
-      : 'Erreur de chargement';
+      : `Erreur — ${err.message || 'chargement impossible'}`;
   }
 });
 
