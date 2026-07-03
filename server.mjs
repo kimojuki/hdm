@@ -81,6 +81,13 @@ const server = http.createServer((req, res) => {
 
   const ext = path.extname(filePath).toLowerCase();
   const type = MIME[ext] || 'application/octet-stream';
+
+  if (req.method === 'HEAD') {
+    res.writeHead(200, { 'Content-Type': type });
+    res.end();
+    return;
+  }
+
   fs.readFile(filePath, (err, data) => {
     if (err) {
       send(res, 500, 'Server error');

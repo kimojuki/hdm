@@ -9,15 +9,27 @@ export function loadWithTimeout(promise, ms, label) {
   ]);
 }
 
-export async function assertAsset(url) {
-  const res = await fetch(url, { method: 'HEAD' });
-  if (!res.ok) {
-    throw new Error(`Asset manquant ${url} (HTTP ${res.status})`);
-  }
-  const type = res.headers.get('content-type') || '';
-  if (type.includes('text/html')) {
-    throw new Error(
-      `Asset invalide ${url} — le serveur renvoie du HTML (vérifie le proxy Node / dist/)`,
-    );
+export async function assertAsset(url, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    let res = await fetch(url, { method: 'HEAD', signal: controller.signal });
+    if (!res.ok) {
+      res = await fetch(url, { method: 'GET', headers: { Range: 'bytes=0-0' }, signal: controller.signal });
+    }
+    if (!res.ok) {
+      throw new Error(`Asset manquant ${url} (HTTP ${res.status})`);
+    }
+    const type = res.headers.get('content-type') || '';
+    if (type.includes('text/html')) {
+      throw new Error(`Asset invalide ${url} — le serveur renvoie du HTML`);
+    }
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Timeout réseau: ${url}`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
 }

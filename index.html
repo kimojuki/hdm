@@ -367,6 +367,21 @@
       <button type="button" id="jump-btn" aria-label="Sauter">Saut</button>
       <a href="/admin.html" id="admin-link">Admin assets</a>
     </div>
+    <script>
+      (function () {
+        const p = document.querySelector('#loading p');
+        const set = (text) => { if (p) p.textContent = text; };
+        window.__hdmSetLoading = set;
+        set('Téléchargement du jeu…');
+        window.addEventListener('error', (e) => {
+          set('Erreur — ' + (e.message || 'script'));
+        });
+        window.addEventListener('unhandledrejection', (e) => {
+          const msg = e.reason?.message || String(e.reason || 'chargement');
+          set('Erreur — ' + msg);
+        });
+      })();
+    </script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

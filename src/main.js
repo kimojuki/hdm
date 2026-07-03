@@ -27,7 +27,21 @@ const app = document.getElementById('app');
 const loadingEl = document.getElementById('loading');
 const titleEl = document.getElementById('title');
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+function setLoadingStatus(text) {
+  if (typeof window.__hdmSetLoading === 'function') window.__hdmSetLoading(text);
+  const msg = loadingEl?.querySelector('p');
+  if (msg) msg.textContent = text;
+}
+
+setLoadingStatus('Initialisation WebGL…');
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+} catch (err) {
+  setLoadingStatus(`Erreur WebGL — ${err.message}`);
+  throw err;
+}
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, DPR_CAP));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
@@ -294,11 +308,6 @@ const locationMenu = new LocationMenu({
   },
 });
 
-function setLoadingStatus(text) {
-  const msg = loadingEl?.querySelector('p');
-  if (msg) msg.textContent = text;
-}
-
 async function initGame() {
   setLoadingStatus('Vérification des assets…');
   await assertAsset('/personnage.fbx');
@@ -318,12 +327,11 @@ async function initGame() {
 
 initGame().catch((err) => {
   console.error(err);
-  const msg = loadingEl.querySelector('p');
-  if (msg) {
-    msg.textContent = err.message?.includes('Root')
+  setLoadingStatus(
+    err.message?.includes('Root')
       ? 'Prefab base manquant — voir assets/batiment/base/'
-      : `Erreur — ${err.message || 'chargement impossible'}`;
-  }
+      : `Erreur — ${err.message || 'chargement impossible'}`,
+  );
 });
 
 function animate() {

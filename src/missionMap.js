@@ -3,6 +3,7 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { loadMecha01, initEnemy } from './enemy.js';
 import { CollisionWorld } from './collisions.js';
 import { snapObjectBaseToSurface } from './terrain.js';
+import { loadWithTimeout } from './loadUtils.js';
 import {
   BUILDING_MODELS,
   BUILDING_LAYOUT,
@@ -57,7 +58,11 @@ async function loadFbxPlacements({
   const loadModel = async (filename) => {
     if (cache.has(filename)) return cache.get(filename);
     try {
-      const fbx = await loader.loadAsync(`${basePath}/${filename}`);
+      const fbx = await loadWithTimeout(
+        loader.loadAsync(`${basePath}/${filename}`),
+        120000,
+        `${basePath}/${filename}`,
+      );
       const prepared = prepareFbxModel(fbx, texture, { castShadow });
       cache.set(filename, prepared);
       return prepared;
