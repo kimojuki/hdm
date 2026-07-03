@@ -3,11 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "assets:manifest": "node scripts/build-asset-manifest.mjs",
     "dev": "npm run assets:manifest && vite",
     "build": "npm run assets:manifest && vite build",
     "start": "node server.mjs",
+    "start:infomaniak": "bash scripts/start.sh",
     "preview": "vite preview"
   },
   "dependencies": {

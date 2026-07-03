@@ -48,9 +48,17 @@ PORT=4001 npm start             # sert dist/ via server.mjs
 
 Migration unique si le dépôt était cloné dans `hdm/` : `bash scripts/migrate-to-site-root.sh`
 
-**Toujours en ligne** : l'app Node doit être activée et redémarrée via le Manager Infomaniak (`npm start` tourne en permanence, pas en SSH manuel). Test : `curl http://127.0.0.1:4001/health`
+**Toujours en ligne** : redémarrer l'app via le Manager Infomaniak (onglet Node.js). Test : `bash scripts/diagnose.sh`
 
-**Spinner infini** : cause fréquente = Apache sert `index.html` dev (avec `/src/main.js`) au lieu du proxy Node → `dist/`. Le script `deploy.sh` supprime ce fichier à la racine après chaque build.
+| Paramètre Manager | Valeur |
+|-------------------|--------|
+| Dossier d'exécution | `sites/helldivermobiel.com` |
+| Build | `npm install --include=dev && npm run build` |
+| Lancement | `bash scripts/start.sh` |
+| Port | `4001` (identique au code via `PORT`) |
+| Node.js | 20 LTS |
+
+**503** : l'app Node ne démarre pas — consulter la console d'exécution du Manager et lancer `bash scripts/diagnose.sh` en SSH.
 
 ---
 

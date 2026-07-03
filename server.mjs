@@ -8,6 +8,11 @@ const ROOT = path.join(__dirname, 'dist');
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = '0.0.0.0';
 
+if (!fs.existsSync(path.join(ROOT, 'index.html'))) {
+  console.error(`[HDM] ERREUR: ${ROOT}/index.html introuvable — exécute: npm run build`);
+  process.exit(1);
+}
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -86,6 +91,12 @@ const server = http.createServer((req, res) => {
   });
 });
 
+server.on('error', (err) => {
+  console.error(`[HDM] Impossible d'écouter sur ${HOST}:${PORT}`, err.message);
+  process.exit(1);
+});
+
 server.listen(PORT, HOST, () => {
-  console.log(`HDM server → http://${HOST}:${PORT} (dist/)`);
+  console.log(`[HDM] Serveur prêt — http://${HOST}:${PORT} (dist/)`);
+  console.log(`[HDM] Health: http://127.0.0.1:${PORT}/health`);
 });
