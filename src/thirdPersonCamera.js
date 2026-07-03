@@ -4,12 +4,14 @@ import { CameraCollision } from './cameraCollision.js';
 
 const _ideal = new THREE.Vector3();
 const _resolved = new THREE.Vector3();
-const _look = new THREE.Vector3();
+const _pivot = new THREE.Vector3();
+const _orbitDir = new THREE.Vector3();
 const _forward = new THREE.Vector3();
+const _lookTarget = new THREE.Vector3();
 const _ndcCenter = new THREE.Vector2(0, 0);
 
 /**
- * Caméra TPS over-the-shoulder — s'appuie sur CameraController (yaw/pitch/zoom).
+ * Caméra TPS over-the-shoulder — rig orbitale rigidement attachée au joueur.
  * Extensions futures : shoulderSide, adsZoom, shoulderSwap (non implémentées).
  */
 export class ThirdPersonCamera {
@@ -22,13 +24,13 @@ export class ThirdPersonCamera {
     /** 1 = épaule droite, -1 = gauche (changement d'épaule futur). */
     this.shoulderSide = options.shoulderSide ?? 1;
 
-    this.smoothPosition = new THREE.Vector3();
-    this.smoothLookAt = new THREE.Vector3();
-    this._positionInitialized = false;
+    /** Lissage uniquement pour le retrait collision (évite les saccades). */
+    this.collisionSmoothing = options.collisionSmoothing ?? 0.0008;
+    this._collisionDistance = null;
 
-    this.positionSmoothing = options.positionSmoothing ?? 0.001;
-    this.lookSmoothing = options.lookSmoothing ?? 0.001;
-    this.lookAheadDistance = options.lookAheadDistance ?? 12;
+    this.lookAheadDistance = options.lookAheadDistance ?? 18;
+    /** Hauteur du point visé (pieds joueur) — cadre le corps entier à l'écran. */
+    this.lookTargetHeight = options.lookTargetHeight ?? options.lookHeight ?? 1.0;
   }
 
   getYaw() {
@@ -63,29 +65,36 @@ export class ThirdPersonCamera {
     this.controller.setPinchDistance(dist);
   }
 
-  /** Point regardé par la caméra (centre écran / réticule). */
-  getLookPoint(playerPos, out = _look) {
+  /** Direction de visée (axe avant caméra / réticule). */
+  getViewForward(out = _forward) {
     const yaw = this.controller.yaw;
     const pitch = this.controller.pitch;
     const cosP = Math.cos(pitch);
     const sinP = Math.sin(pitch);
 
-    _forward.set(
+    return out.set(
       -Math.sin(yaw) * cosP,
       sinP,
       -Math.cos(yaw) * cosP,
     );
-    return out.set(
-      playerPos.x + _forward.x * this.lookAheadDistance,
-      playerPos.y + this.controller.lookHeight + _forward.y * this.lookAheadDistance,
-      playerPos.z + _forward.z * this.lookAheadDistance,
-    );
   }
 
-  /** Position caméra idéale avec décalage over-the-shoulder. */
+  /** Vecteur droit horizontal (pour décalage épaule). */
+  getViewRight(out = _forward) {
+    const yaw = this.controller.yaw;
+    return out.set(Math.cos(yaw), 0, -Math.sin(yaw));
+  }
+
+  getPivot(playerPos, out = _pivot) {
+    return out.set(playerPos.x, playerPos.y + this.controller.lookHeight, playerPos.z);
+  }
+
+  /**
+   * Position caméra idéale : orbite derrière le pivot + décalage épaule.
+   * Recalculée chaque frame depuis la position joueur → caméra toujours fixée.
+   */
   getShoulderPosition(playerPos, out = _ideal) {
     const ctrl = this.controller;
-
     const cosP = Math.cos(ctrl.pitch);
     const sinP = Math.sin(ctrl.pitch);
     const hDist = ctrl.distance * cosP;
@@ -99,12 +108,26 @@ export class ThirdPersonCamera {
     return out;
   }
 
-  getPivot(playerPos, out = _look) {
-    return out.set(playerPos.x, playerPos.y + this.controller.lookHeight, playerPos.z);
+  /** Point regardé : horizontal devant le joueur, à hauteur torse (corps entier visible). */
+  getLookTarget(playerPos, out = _lookTarget) {
+    const forward = this.getViewForward(_forward);
+    const hLen = Math.hypot(forward.x, forward.z);
+    const scale = hLen > 1e-6 ? this.lookAheadDistance / hLen : this.lookAheadDistance;
+
+    return out.set(
+      playerPos.x + forward.x * scale,
+      playerPos.y + this.lookTargetHeight,
+      playerPos.z + forward.z * scale,
+    );
+  }
+
+  /** Réinitialise le lissage collision (changement de map / téléport). */
+  resetFollow() {
+    this._collisionDistance = null;
   }
 
   /**
-   * Met à jour la caméra Three.js (position lissée + regard lissé).
+   * Met à jour la caméra Three.js — position et orientation liées au joueur sans décalage.
    * @param {THREE.PerspectiveCamera} camera
    * @param {THREE.Vector3} playerPos
    * @param {number} dt
@@ -113,25 +136,39 @@ export class ThirdPersonCamera {
   applyToCamera(camera, playerPos, dt, collisionTargets = null) {
     this.controller.update(dt);
 
-    const pivot = this.getPivot(playerPos, _look);
+    const pivot = this.getPivot(playerPos, _pivot);
     this.getShoulderPosition(playerPos, _ideal);
     this.collision.resolve(pivot, _ideal, collisionTargets, _resolved);
 
-    const lookTarget = this.getLookPoint(playerPos, _look);
+    const idealDist = pivot.distanceTo(_ideal);
+    let useDist = pivot.distanceTo(_resolved);
 
-    if (!this._positionInitialized) {
-      this.smoothPosition.copy(_resolved);
-      this.smoothLookAt.copy(lookTarget);
-      this._positionInitialized = true;
+    if (this._collisionDistance == null) {
+      this._collisionDistance = useDist;
+    } else if (useDist < idealDist - 0.02) {
+      const t = 1 - Math.pow(this.collisionSmoothing, dt);
+      this._collisionDistance += (useDist - this._collisionDistance) * t;
+      useDist = this._collisionDistance;
+    } else {
+      this._collisionDistance = idealDist;
+      useDist = idealDist;
     }
 
-    const posT = 1 - Math.pow(this.positionSmoothing, dt);
-    const lookT = 1 - Math.pow(this.lookSmoothing, dt);
-    this.smoothPosition.lerp(_resolved, posT);
-    this.smoothLookAt.lerp(lookTarget, lookT);
+    if (Math.abs(useDist - idealDist) < 0.02) {
+      camera.position.copy(_ideal);
+    } else {
+      _orbitDir.subVectors(_ideal, pivot);
+      const orbitLen = _orbitDir.length();
+      if (orbitLen > 1e-6) {
+        _orbitDir.multiplyScalar(useDist / orbitLen);
+        camera.position.copy(pivot).add(_orbitDir);
+      } else {
+        camera.position.copy(_ideal);
+      }
+    }
 
-    camera.position.copy(this.smoothPosition);
-    camera.lookAt(this.smoothLookAt);
+    this.getLookTarget(playerPos, _lookTarget);
+    camera.lookAt(_lookTarget);
   }
 
   /** Raycast depuis le centre écran (NDC 0,0). */

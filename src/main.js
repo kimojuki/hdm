@@ -146,10 +146,15 @@ function loadTexture(url, nearest = true) {
 
 const input = new InputManager(renderer.domElement);
 const tpsCamera = new ThirdPersonCamera({
-  distance: 10.8,
-  lookHeight: 1.1,
-  initialPitch: 0.58,
-  shoulderOffset: 0.42,
+  distance: 5.2,
+  minDistance: 3.0,
+  maxDistance: 8,
+  lookHeight: 0.95,
+  lookTargetHeight: 0.88,
+  initialPitch: 0.26,
+  minPitch: 0.14,
+  maxPitch: 0.68,
+  shoulderOffset: 0.32,
 });
 bindCameraInput(renderer.domElement, tpsCamera.controller);
 const aimSystem = new AimSystem();
@@ -373,7 +378,7 @@ async function switchToLocation(location) {
     currentLocation = location;
     locationMenu.setActive(location);
     setTitle(location);
-    tpsCamera._positionInitialized = false;
+    tpsCamera.resetFollow();
     tpsCamera.applyToCamera(camera, player.position, 1, getCameraCollisionTargets());
     setLocationTransitionStatus('Prêt');
   } catch (err) {
