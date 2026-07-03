@@ -1,0 +1,11 @@
+{
+  "name": "HDM",
+  "short_name": "HDM",
+  "description": "Helldivers mobile prototype",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#1a1208",
+  "theme_color": "#1a1208"
+}

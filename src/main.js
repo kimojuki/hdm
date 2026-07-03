@@ -10,6 +10,7 @@ import { loadMissionMap } from './missionMap.js';
 import { PlayerSession } from './playerSession.js';
 import { PlayerBase } from './playerBase.js';
 import { LocationMenu, LOCATION } from './locationMenu.js';
+import { initMobileFullscreen, getViewportSize } from './mobileFullscreen.js';
 import {
   showLocationTransition,
   setLocationTransitionStatus,
@@ -60,6 +61,17 @@ scene.background = new THREE.Color(0xc9a86c);
 scene.fog = new THREE.Fog(0xc9a86c, 70, 190);
 
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+
+function resizeRenderer() {
+  const { width, height } = getViewportSize();
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, DPR_CAP));
+  renderer.setSize(width, height);
+}
+
+initMobileFullscreen({ onResize: resizeRenderer });
+resizeRenderer();
 
 const ambient = new THREE.AmbientLight(0xffe8c0, 0.55);
 scene.add(ambient);
@@ -559,11 +571,6 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, DPR_CAP));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+window.addEventListener('resize', resizeRenderer);
 
 export { sceneManager, switchToLocation };

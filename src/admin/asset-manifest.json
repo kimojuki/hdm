@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T14:41:38.559Z",
+  "generatedAt": "2026-07-03T15:29:07.547Z",
   "categories": [
     {
       "id": "personnages",
@@ -271,7 +271,7 @@
       "id": "batiments",
       "label": "Bâtiments",
       "description": "Structures de la colonie spatiale",
-      "count": 37,
+      "count": 38,
       "items": [
         {
           "id": "batiment-map1-fbx-argo-ship-fbx",
@@ -285,6 +285,19 @@
           "mtl": null,
           "previewFallback": null,
           "source": "batiment/map1/fbx/‘argo_ship.fbx"
+        },
+        {
+          "id": "batiment-base-fantasy-sky-background-source-background-fbx",
+          "name": "background",
+          "filename": "background.fbx",
+          "path": "/batiment/base/fantasy-sky-background/source/background.fbx",
+          "format": "fbx",
+          "textures": [
+            "/batiment/map1/texture/T_Spase.png"
+          ],
+          "mtl": null,
+          "previewFallback": null,
+          "source": "batiment/base/fantasy-sky-background/source/background.fbx"
         },
         {
           "id": "batiment-map1-fbx-connecting-gateway-fbx",
@@ -1408,6 +1421,6 @@
     }
   ],
   "stats": {
-    "total": 108
+    "total": 109
   }
 }

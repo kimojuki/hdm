@@ -2,18 +2,67 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="HDM" />
+    <meta name="theme-color" content="#1a1208" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>HDM — Test Map Sol 1</title>
+    <script>
+      (function () {
+        function fit() {
+          var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+          document.documentElement.style.setProperty('--app-height', Math.round(h) + 'px');
+          window.scrollTo(0, 1);
+        }
+        fit();
+        window.addEventListener('resize', fit);
+        window.addEventListener('orientationchange', function () { setTimeout(fit, 200); });
+      })();
+    </script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1208; touch-action: none; }
-      #app { width: 100%; height: 100%; }
+      html {
+        width: 100%;
+        height: 100%;
+        height: 100dvh;
+        height: -webkit-fill-available;
+        overflow: hidden;
+        background: #1a1208;
+      }
+      body {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        height: 100dvh;
+        height: var(--app-height, 100dvh);
+        overflow: hidden;
+        overscroll-behavior: none;
+        touch-action: none;
+        background: #1a1208;
+        padding:
+          env(safe-area-inset-top, 0px)
+          env(safe-area-inset-right, 0px)
+          env(safe-area-inset-bottom, 0px)
+          env(safe-area-inset-left, 0px);
+      }
+      #app {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
       canvas { display: block; width: 100%; height: 100%; }
 
       #hud {
         position: fixed;
         inset: 0;
+        width: 100%;
+        height: 100%;
+        height: var(--app-height, 100dvh);
         pointer-events: none;
         font-family: system-ui, -apple-system, sans-serif;
         color: #f5e6c8;
@@ -21,8 +70,8 @@
 
       #title {
         position: absolute;
-        top: 16px;
-        left: 16px;
+        top: max(16px, env(safe-area-inset-top, 0px));
+        left: max(16px, env(safe-area-inset-left, 0px));
         font-size: 13px;
         font-weight: 600;
         letter-spacing: 0.08em;
@@ -158,8 +207,19 @@
       }
 
       @media (max-width: 600px) {
-        #joystick-zone { bottom: 24px; left: 24px; width: 120px; height: 120px; }
-        #jump-btn { bottom: 32px; right: 24px; width: 64px; height: 64px; font-size: 11px; }
+        #joystick-zone {
+          bottom: max(24px, env(safe-area-inset-bottom, 0px));
+          left: max(24px, env(safe-area-inset-left, 0px));
+          width: 120px;
+          height: 120px;
+        }
+        #jump-btn {
+          bottom: max(32px, env(safe-area-inset-bottom, 0px));
+          right: max(24px, env(safe-area-inset-right, 0px));
+          width: 64px;
+          height: 64px;
+          font-size: 11px;
+        }
         #camera-hint { right: 16px; font-size: 9px; }
         #hint { display: none; }
       }
@@ -249,8 +309,8 @@
       @media (max-width: 600px) {
         #location-menu {
           top: auto;
-          bottom: 130px;
-          left: 16px;
+          bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+          left: max(16px, env(safe-area-inset-left, 0px));
           min-width: 130px;
         }
       }
