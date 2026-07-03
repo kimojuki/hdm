@@ -10,6 +10,11 @@ import { loadMissionMap } from './missionMap.js';
 import { PlayerSession } from './playerSession.js';
 import { PlayerBase } from './playerBase.js';
 import { LocationMenu, LOCATION } from './locationMenu.js';
+import {
+  showLocationTransition,
+  setLocationTransitionStatus,
+  hideLocationTransition,
+} from './locationTransition.js';
 import { assertAsset } from './loadUtils.js';
 
 const PLAYER_RADIUS = 0.42;
@@ -176,13 +181,14 @@ async function ensureTextures() {
 
 async function ensureMissionMap() {
   if (sceneManager.missionMap) return sceneManager.missionMap;
+  setLoadingStatus('Chargement de la zone de départ…');
   const missionMap = await loadMissionMap(await ensureTextures());
   sceneManager.missionMap = missionMap;
   return missionMap;
 }
 
 async function ensurePlayerBase() {
-  const BASE_VERSION = 16;
+  const BASE_VERSION = 30;
   if (sceneManager.playerBase?.loaded && sceneManager.playerBase.layoutVersion === BASE_VERSION) {
     return sceneManager.playerBase;
   }
@@ -236,10 +242,56 @@ function spawnOnBase(base) {
   player.position.set(spawnWorld.x, groundY, spawnWorld.z);
 }
 
+function applyMissionLighting() {
+  applySunProfile(defaultSun);
+  ambient.intensity = 0.55;
+  ambient.color.setHex(0xffe8c0);
+  hemi.intensity = 0.35;
+  hemi.color.setHex(0xffe8c0);
+  hemi.groundColor.setHex(0x8b6914);
+  renderer.toneMappingExposure = 1.1;
+}
+
+function applyBaseLighting() {
+  applySunProfile(baseSun);
+  ambient.intensity = 0.5;
+  ambient.color.setHex(0xc8d8ff);
+  hemi.intensity = 0.35;
+  hemi.color.setHex(0x88aaff);
+  hemi.groundColor.setHex(0x1a0828);
+  renderer.toneMappingExposure = 1.35;
+}
+
+async function enterMissionLocation() {
+  setLocationTransitionStatus('Chargement de la map…');
+  applyMissionLighting();
+  const missionMap = await ensureMissionMap();
+  await sceneManager.enterMissionMap(missionMap);
+  ensureMapEditor(missionMap);
+  spawnOnMissionMap(missionMap);
+  debugGroup = missionMap.debugGroup;
+  debugGroup.visible = SHOW_DEBUG;
+}
+
+async function enterBaseLocation() {
+  setLocationTransitionStatus('Chargement du ciel…');
+  applyBaseLighting();
+  setLocationTransitionStatus('Chargement de la base…');
+  const base = await ensurePlayerBase();
+  setLocationTransitionStatus('Initialisation…');
+  await sceneManager.enterPlayerBase(base);
+  spawnOnBase(base);
+  debugGroup = base.debugGroup;
+  if (debugGroup) debugGroup.visible = SHOW_DEBUG;
+}
+
 async function switchToLocation(location) {
   if (switching || location === currentLocation) return;
+
+  const previousLocation = currentLocation;
   switching = true;
   locationMenu.setBusy(true);
+  showLocationTransition(location, 'Préparation…');
 
   if (mapEditor?.isActive()) {
     mapEditor.toggle();
@@ -252,35 +304,16 @@ async function switchToLocation(location) {
 
   try {
     if (location === LOCATION.MISSION) {
-      applySunProfile(defaultSun);
-      ambient.intensity = 0.55;
-      ambient.color.setHex(0xffe8c0);
-      hemi.intensity = 0.35;
-      hemi.color.setHex(0xffe8c0);
-      hemi.groundColor.setHex(0x8b6914);
-      renderer.toneMappingExposure = 1.1;
-      const missionMap = await ensureMissionMap();
-      await sceneManager.enterMissionMap(missionMap);
-      ensureMapEditor(missionMap);
-      spawnOnMissionMap(missionMap);
-      debugGroup = missionMap.debugGroup;
-      debugGroup.visible = SHOW_DEBUG;
+      await enterMissionLocation();
     } else {
-      applySunProfile(baseSun);
-      ambient.intensity = 0.5;
-      ambient.color.setHex(0xc8d8ff);
-      hemi.intensity = 0.35;
-      hemi.color.setHex(0x88aaff);
-      hemi.groundColor.setHex(0x1a0828);
-      renderer.toneMappingExposure = 1.35;
-      const base = await ensurePlayerBase();
-      await sceneManager.enterPlayerBase(base);
-      spawnOnBase(base);
-      debugGroup = base.debugGroup;
-      if (debugGroup) debugGroup.visible = SHOW_DEBUG;
+      await enterBaseLocation();
     }
 
     const collisionWorld = getCollisionWorld();
+    if (!collisionWorld) {
+      throw new Error('Monde de collision indisponible après chargement');
+    }
+
     collisionWorld.addDynamic(player, 0.06);
     playerPhysics.velocityY = 0;
     playerPhysics.onGround = true;
@@ -289,15 +322,38 @@ async function switchToLocation(location) {
     locationMenu.setActive(location);
     setTitle(location);
     cameraCtrl.applyToCamera(camera, player.position, 1);
+    setLocationTransitionStatus('Prêt');
   } catch (err) {
-    console.error(err);
+    console.error('[HDM] Changement de lieu échoué:', err);
+    setLocationTransitionStatus(`Erreur — ${err.message || 'chargement impossible'}`);
+
+    if (previousLocation && previousLocation !== location) {
+      try {
+        setLocationTransitionStatus('Restauration…');
+        if (previousLocation === LOCATION.MISSION) {
+          await enterMissionLocation();
+        } else {
+          await enterBaseLocation();
+        }
+        const collisionWorld = getCollisionWorld();
+        if (collisionWorld && player) {
+          collisionWorld.addDynamic(player, 0.06);
+          playerPhysics.velocityY = 0;
+          playerPhysics.onGround = true;
+          cameraCtrl.applyToCamera(camera, player.position, 1);
+        }
+      } catch (restoreErr) {
+        console.error('[HDM] Restauration du lieu précédent échouée:', restoreErr);
+      }
+    }
+
+    await new Promise((r) => setTimeout(r, 1200));
+    throw err;
+  } finally {
+    await hideLocationTransition();
     locationMenu.setBusy(false);
     switching = false;
-    throw err;
   }
-
-  locationMenu.setBusy(false);
-  switching = false;
 }
 
 const locationMenu = new LocationMenu({
@@ -309,29 +365,46 @@ const locationMenu = new LocationMenu({
 });
 
 async function initGame() {
-  setLoadingStatus('Vérification des assets…');
-  await assertAsset('/personnage.fbx');
-  await assertAsset('/solmap1/Textures/T_Desert_plants.png');
-  await assertAsset('/batiment/map1/fbx/Main_house_3lv.fbx');
+  switching = true;
+  showLocationTransition(LOCATION.MISSION, 'Vérification des assets…');
 
-  setLoadingStatus('Chargement du personnage…');
-  player = await loadPlayer();
-  scene.add(player);
+  try {
+    await assertAsset('/personnage.fbx');
+    await assertAsset('/solmap1/Textures/T_Desert_plants.png');
+    await assertAsset('/batiment/map1/fbx/Main_house_3lv.fbx');
 
-  setLoadingStatus('Chargement de la map…');
-  await switchToLocation(LOCATION.MISSION);
+    setLocationTransitionStatus('Chargement du personnage…');
+    player = await loadPlayer();
+    scene.add(player);
 
-  loadingEl.classList.add('hidden');
-  input.focus();
+    await enterMissionLocation();
+
+    const collisionWorld = getCollisionWorld();
+    collisionWorld.addDynamic(player, 0.06);
+    playerPhysics.velocityY = 0;
+    playerPhysics.onGround = true;
+
+    currentLocation = LOCATION.MISSION;
+    locationMenu.setActive(LOCATION.MISSION);
+    setTitle(LOCATION.MISSION);
+    cameraCtrl.applyToCamera(camera, player.position, 1);
+    setLocationTransitionStatus('Prêt');
+  } finally {
+    switching = false;
+    await hideLocationTransition();
+    input.focus();
+  }
 }
 
 initGame().catch((err) => {
   console.error(err);
-  setLoadingStatus(
-    err.message?.includes('Root')
-      ? 'Prefab base manquant — voir assets/batiment/base/'
-      : `Erreur — ${err.message || 'chargement impossible'}`,
-  );
+  const msg = err.message?.includes('Root')
+    ? 'Prefab base manquant — voir assets/batiment/base/'
+    : `Erreur — ${err.message || 'chargement impossible'}`;
+  setLoadingStatus(msg);
+  setLocationTransitionStatus(msg);
+  loadingEl?.classList.remove('hidden');
+  switching = false;
 });
 
 function animate() {
@@ -445,7 +518,14 @@ function animate() {
       cameraCtrl.applyToCamera(camera, player.position, dt);
 
       if (sceneManager.isInMissionMap()) {
+        sceneManager.missionMap?.updateStreaming?.(
+          player.position.x,
+          player.position.z,
+          dt,
+        )?.catch?.(console.error);
+
         for (const enemy of getEnemies()) {
+          if (!enemy.parent) continue;
           updateEnemy(enemy, dt, groundSampler, mapHalf, collisionWorld, simFrame);
         }
       }

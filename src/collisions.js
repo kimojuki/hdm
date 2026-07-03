@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { MeshBVH, StaticGeometryGenerator } from 'three-mesh-bvh';
+import { getProbeOffsets } from './terrain.js';
 
 const _box = new THREE.Box3();
 const _sample = new THREE.Vector3();
@@ -32,6 +33,9 @@ const _vc = new THREE.Vector3();
 const _e1 = new THREE.Vector3();
 const _e2 = new THREE.Vector3();
 const _n = new THREE.Vector3();
+const _floorRay = new THREE.Ray();
+const _floorRayOrigin = new THREE.Vector3();
+const FLOOR_WALKABLE_NORMAL_Y = 0.42;
 
 /**
  * Ne garde que les triangles raides (parois/falaises) d'une géométrie monde.
@@ -379,18 +383,113 @@ export class CollisionWorld {
     this._dynamicCache = null;
     this._dynamicCacheFrame = -1;
     this._dynamicCacheExclude = null;
+    this._nearbyStaticCache = null;
+    this._nearbyStaticFrame = -1;
   }
 
   finalize() {
     this._spatialGrid = buildSpatialGrid(this.staticColliders);
   }
 
-  _getNearbyStaticColliders(x, z, radius) {
-    if (this._spatialGrid) {
-      const nearby = querySpatialGrid(this._spatialGrid, x, z, radius + 2);
-      if (nearby) return nearby;
+  /** Hauteur sol via BVH (base) — remplace les raycasts Three.js coûteux. */
+  _bvhFloorAt(x, feetY, z, maxStepUp, searchDown) {
+    if (this.floorColliders.length === 0) return -Infinity;
+
+    const startY = feetY + maxStepUp + 2.5;
+    const minY = feetY - searchDown;
+    const maxY = feetY + maxStepUp + 0.12;
+    let best = -Infinity;
+
+    _floorRayOrigin.set(x, startY, z);
+    _floorRay.origin.copy(_floorRayOrigin);
+    _floorRay.direction.set(0, -1, 0);
+
+    for (const collider of this.floorColliders) {
+      const box = collider.box;
+      if (x < box.min.x || x > box.max.x || z < box.min.z || z > box.max.z) continue;
+
+      const hit = collider.bvh.raycastFirst(_floorRay);
+      if (!hit) continue;
+      if (hit.point.y < minY || hit.point.y > maxY) continue;
+      if (hit.face?.normal && hit.face.normal.y < FLOOR_WALKABLE_NORMAL_Y) continue;
+      best = Math.max(best, hit.point.y);
     }
-    return this.staticColliders;
+
+    return best;
+  }
+
+  _bvhSupportBelow(x, feetY, z, maxBelow = 18) {
+    if (this.floorColliders.length === 0) return -Infinity;
+
+    const minY = feetY - maxBelow;
+    let best = -Infinity;
+
+    _floorRayOrigin.set(x, feetY + 2.5, z);
+    _floorRay.origin.copy(_floorRayOrigin);
+    _floorRay.direction.set(0, -1, 0);
+
+    for (const collider of this.floorColliders) {
+      const box = collider.box;
+      if (x < box.min.x || x > box.max.x || z < box.min.z || z > box.max.z) continue;
+
+      const hit = collider.bvh.raycastFirst(_floorRay);
+      if (!hit) continue;
+      if (hit.point.y > feetY + 0.4 || hit.point.y < minY) continue;
+      if (hit.face?.normal && hit.face.normal.y < FLOOR_WALKABLE_NORMAL_Y) continue;
+      best = Math.max(best, hit.point.y);
+    }
+
+    return best;
+  }
+
+  sampleWalkableFloor(x, feetY, z, maxStepUp = LOW_LEDGE_MAX_HEIGHT, probeMode = 'full') {
+    if (this.floorColliders.length === 0) return feetY;
+
+    if (probeMode === 'snap') {
+      const support = this._bvhSupportBelow(x, feetY, z);
+      if (support > -Infinity) return support;
+    }
+
+    const searchDown = probeMode === 'snap' ? 18 : maxStepUp + 0.6;
+    let bestBelow = -Infinity;
+    let bestStep = -Infinity;
+
+    for (const [ox, oz] of getProbeOffsets(probeMode)) {
+      const y = this._bvhFloorAt(x + ox, feetY, z + oz, maxStepUp, searchDown);
+      if (y <= feetY + 0.25 && y >= feetY - searchDown) bestBelow = Math.max(bestBelow, y);
+      if (y > feetY + 0.02 && y <= feetY + maxStepUp + 0.1) bestStep = Math.max(bestStep, y);
+    }
+
+    if (bestStep > feetY + 0.03 && bestStep >= bestBelow - 0.05) return bestStep;
+    if (bestBelow > -Infinity) return bestBelow;
+    if (bestStep > -Infinity) return bestStep;
+
+    const fallback = this._bvhSupportBelow(x, feetY, z);
+    return fallback > -Infinity ? fallback : feetY;
+  }
+
+  _getNearbyStaticColliders(x, z, radius, frameId = 0) {
+    if (frameId > 0 && this._nearbyStaticFrame === frameId && this._nearbyStaticCache) {
+      return this._nearbyStaticCache;
+    }
+
+    let nearby;
+    if (this._spatialGrid) {
+      nearby = querySpatialGrid(this._spatialGrid, x, z, radius + 2);
+      if (nearby) {
+        if (frameId > 0) {
+          this._nearbyStaticCache = nearby;
+          this._nearbyStaticFrame = frameId;
+        }
+        return nearby;
+      }
+    }
+    nearby = this.staticColliders;
+    if (frameId > 0) {
+      this._nearbyStaticCache = nearby;
+      this._nearbyStaticFrame = frameId;
+    }
+    return nearby;
   }
 
   /**
@@ -466,13 +565,13 @@ export class CollisionWorld {
    * Repousse une capsule (échantillons sphériques multi-hauteurs) hors des
    * surfaces mesh statiques. Distances 3D exactes contre les triangles.
    */
-  resolveAgainstStaticMeshes(x, z, radius, feetY, playerHeight = 1.8) {
+  resolveAgainstStaticMeshes(x, z, radius, feetY, playerHeight = 1.8, frameId = 0) {
     if (this.staticColliders.length === 0) return { x, z };
 
     let px = x;
     let pz = z;
     const heightScale = playerHeight / 1.8;
-    const nearby = this._getNearbyStaticColliders(px, pz, radius);
+    const nearby = this._getNearbyStaticColliders(px, pz, radius, frameId);
 
     for (let pass = 0; pass < STATIC_RESOLVE_PASSES; pass++) {
       let corrected = false;
@@ -528,9 +627,9 @@ export class CollisionWorld {
   }
 
   /** True si la capsule au point donné touche une surface mesh statique. */
-  collidesWithStaticMeshes(x, z, radius, feetY, playerHeight = 1.8) {
+  collidesWithStaticMeshes(x, z, radius, feetY, playerHeight = 1.8, frameId = 0) {
     const heightScale = playerHeight / 1.8;
-    const nearby = this._getNearbyStaticColliders(x, z, radius);
+    const nearby = this._getNearbyStaticColliders(x, z, radius, frameId);
 
     for (const collider of nearby) {
       const box = collider.box;
@@ -610,7 +709,7 @@ export class CollisionWorld {
 
     for (let i = 0; i < steps; i++) {
       const moved = resolveMovement(px, pz, sdx, sdz, dynamicBoxes, radius, mapHalf, feetY);
-      const precise = this.resolveAgainstStaticMeshes(moved.x, moved.z, radius, feetY);
+      const precise = this.resolveAgainstStaticMeshes(moved.x, moved.z, radius, feetY, 1.8, frameId);
       px = THREE.MathUtils.clamp(precise.x, -mapHalf, mapHalf);
       pz = THREE.MathUtils.clamp(precise.z, -mapHalf, mapHalf);
     }

@@ -44,6 +44,19 @@
 
       #loading.hidden { opacity: 0; pointer-events: none; }
 
+      #loading.transition {
+        background: radial-gradient(ellipse at center, #1a1428 0%, #080510 100%);
+      }
+
+      #loading-destination {
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        opacity: 0.9;
+        margin-bottom: 4px;
+      }
+
       #loading p {
         margin-top: 16px;
         font-size: 14px;
@@ -355,6 +368,7 @@
       <div id="title">HDM — Sol Map 1</div>
       <div id="loading">
         <div class="spinner"></div>
+        <div id="loading-destination"></div>
         <p>Chargement des assets…</p>
       </div>
       <div id="joystick-zone">

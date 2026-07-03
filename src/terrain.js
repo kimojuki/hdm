@@ -33,7 +33,7 @@ const WALK_SAMPLE_OFFSETS_MOVE = [
 ];
 const WALK_SAMPLE_OFFSETS_SNAP = [[0, 0], [0.2, 0], [-0.2, 0]];
 
-function getProbeOffsets(probeMode) {
+export function getProbeOffsets(probeMode) {
   if (probeMode === 'snap') return WALK_SAMPLE_OFFSETS_SNAP;
   if (probeMode === 'move') return WALK_SAMPLE_OFFSETS_MOVE;
   return WALK_SAMPLE_OFFSETS_FULL;
@@ -319,6 +319,8 @@ export function limitMovementBySlope(x, z, dx, dz, sampler, maxClimbAngle, feetY
 
   const lookDist = Math.max(dist, SLOPE_LOOKAHEAD);
   const h1 = sampler.sample(x + dirX * lookDist, feetY, z + dirZ * lookDist, MAX_STEP_HEIGHT, 'move');
+
+  if (Math.abs(h1 - h0) < 0.04) return { dx, dz };
 
   if (h1 > h0 + 0.03 && h1 <= h0 + MAX_STEP_HEIGHT + 0.08) {
     return { dx, dz };

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GroundSampler } from './groundSampler.js';
+import { applyBaseSkyEnvironment, clearBaseSkyEnvironment } from './baseSkyEnvironment.js';
 
 /**
  * Gère les scènes actives : Base personnelle et map mission.
@@ -26,7 +27,7 @@ export class SceneManager {
     playerBase.root.updateMatrixWorld(true);
     this.playerBase = playerBase;
     this.activeLocation = 'base';
-    this.applyBaseEnvironment();
+    await this.applyBaseEnvironment();
     return playerBase;
   }
 
@@ -41,12 +42,12 @@ export class SceneManager {
     return missionMap;
   }
 
-  applyBaseEnvironment() {
-    this.scene.background = new THREE.Color(0x12081f);
-    this.scene.fog = new THREE.FogExp2(0x1a0e2e, 0.018);
+  async applyBaseEnvironment() {
+    await applyBaseSkyEnvironment(this.scene);
   }
 
   applyMissionEnvironment() {
+    clearBaseSkyEnvironment(this.scene);
     this.scene.background = new THREE.Color(0xc9a86c);
     this.scene.fog = new THREE.Fog(0xc9a86c, 70, 190);
   }

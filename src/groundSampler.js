@@ -4,23 +4,29 @@ import {
   MAX_STEP_HEIGHT,
 } from './terrain.js';
 
-const CACHE_EPS_XZ = 0.04;
-const CACHE_EPS_Y = 0.2;
+const CACHE_EPS_XZ = 0.1;
+const CACHE_EPS_Y = 0.4;
 
 /**
  * Échantillonneur de sol unifié — évite des centaines de raycasts mesh par frame.
  * Mission : hauteur analytique (même formule que le sol procédural).
- * Base : raycast sur mesh sol/marches dédié uniquement.
+ * Base : BVH sur colliders sol (rapide) ; mesh en repli.
  */
 export class GroundSampler {
-  constructor({ mode = 'mesh', roots = [] } = {}) {
+  constructor({ mode = 'mesh', roots = [], collisionWorld = null } = {}) {
     this.mode = mode;
     this.roots = roots;
+    this.collisionWorld = collisionWorld;
     this._cache = { x: NaN, z: NaN, feetY: NaN, maxStep: NaN, probe: '', y: 0 };
   }
 
   setRoots(roots) {
     this.roots = roots;
+    this.invalidate();
+  }
+
+  setCollisionWorld(collisionWorld) {
+    this.collisionWorld = collisionWorld;
     this.invalidate();
   }
 
@@ -33,6 +39,20 @@ export class GroundSampler {
       return analyticalGroundHeight(x, z);
     }
 
+    if (this.mode === 'bvh' && this.collisionWorld) {
+      return this._sampleCached(
+        x, feetY, z, maxStepUp, probeMode,
+        () => this.collisionWorld.sampleWalkableFloor(x, feetY, z, maxStepUp, probeMode),
+      );
+    }
+
+    return this._sampleCached(
+      x, feetY, z, maxStepUp, probeMode,
+      () => sampleWalkableSurface(x, feetY, z, this.roots, maxStepUp, probeMode),
+    );
+  }
+
+  _sampleCached(x, feetY, z, maxStepUp, probeMode, compute) {
     const c = this._cache;
     if (
       Math.abs(x - c.x) < CACHE_EPS_XZ
@@ -44,7 +64,7 @@ export class GroundSampler {
       return c.y;
     }
 
-    const y = sampleWalkableSurface(x, feetY, z, this.roots, maxStepUp, probeMode);
+    const y = compute();
     c.x = x;
     c.z = z;
     c.feetY = feetY;
