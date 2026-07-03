@@ -15,7 +15,8 @@ if [ ! -f dist/index.html ]; then
 fi
 
 if [ -z "${PORT:-}" ]; then
-  echo "[HDM] AVERTISSEMENT: variable PORT non définie (Infomaniak doit la fournir)"
+  echo "[HDM] ERREUR: PORT non défini — configure le port 4001 dans le Manager Infomaniak"
+  exit 1
 fi
 
 echo "[HDM] Démarrage depuis $(pwd) — PORT=${PORT:-?}"

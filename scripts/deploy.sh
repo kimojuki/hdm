@@ -21,7 +21,7 @@ fi
 echo "→ Déploiement HDM dans $SITE_ROOT"
 git fetch origin
 git reset --hard origin/main
-npm install
+npm install --include=dev
 npm run build
 
 if [ ! -f dist/personnage.fbx ]; then
@@ -40,12 +40,12 @@ rm -f personnage.fbx 2>/dev/null || true
 echo "→ Build OK ($(du -sh dist | cut -f1))"
 echo "→ index.html dev supprimé à la racine (prod = dist/ via Node)"
 echo ""
-echo "Manager Infomaniak (onglet Node.js) :"
+echo "Manager Infomaniak (onglet Node.js) — copier-coller exact :"
 echo "  Dossier d'exécution : sites/helldivermobiel.com"
 echo "  Port                : 4001"
 echo "  Build               : npm install --include=dev && npm run build"
-echo "  Lancement           : bash scripts/start.sh"
+echo "  Lancement           : npm start"
 echo "  Node.js             : 20 LTS"
 echo ""
-echo "→ Redémarre l'app dans le Manager, puis :"
-echo "  bash scripts/diagnose.sh"
+echo "→ Puis clique REDÉMARRER dans le Manager"
+echo "→ Test : bash scripts/diagnose.sh"

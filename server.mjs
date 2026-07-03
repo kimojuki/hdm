@@ -104,6 +104,7 @@ server.on('error', (err) => {
 });
 
 server.listen(PORT, HOST, () => {
+  console.log(`[HDM] cwd=${process.cwd()}`);
   console.log(`[HDM] Serveur prêt — http://${HOST}:${PORT} (dist/)`);
   console.log(`[HDM] Health: http://127.0.0.1:${PORT}/health`);
 });
