@@ -29,36 +29,29 @@ npm run dev        # http://localhost:5173/
 
 Le script `npm run dev` régénère automatiquement le manifeste assets (`npm run assets:manifest`).
 
-### Déploiement Infomaniak
+### Déploiement Infomaniak (PM2, comme zombie-survival)
 
-Le dossier d'exécution Node doit **toujours** être `~/sites/helldivermobiel.com` (racine du site, **pas** `./hdm`).
+Dossier : `~/sites/helldivermobiel.com`
 
-| Paramètre Manager | Valeur |
-|-------------------|--------|
-| Dossier d'exécution | `sites/helldivermobiel.com` |
-| Port | `4001` |
-| Build | `npm install && npm run build` |
-| Start | `npm start` |
-
+**Premier lancement :**
 ```bash
 cd ~/sites/helldivermobiel.com
-bash scripts/deploy.sh          # git pull + install + build
-PORT=4001 npm start             # sert dist/ via server.mjs
+bash scripts/deploy.sh
+# ou : pm2 start ecosystem.config.cjs && pm2 save
 ```
 
-Migration unique si le dépôt était cloné dans `hdm/` : `bash scripts/migrate-to-site-root.sh`
+**Mises à jour :**
+```bash
+bash ~/sites/helldivermobiel.com/scripts/deploy.sh
+```
 
-**Toujours en ligne** : redémarrer l'app via le Manager Infomaniak (onglet Node.js). Test : `bash scripts/diagnose.sh`
-
-| Paramètre Manager | Valeur |
-|-------------------|--------|
-| Dossier d'exécution | `sites/helldivermobiel.com` |
-| Build | `npm install --include=dev && npm run build` |
-| Lancement | `bash scripts/start.sh` |
-| Port | `4001` (identique au code via `PORT`) |
-| Node.js | 20 LTS |
-
-**503** : l'app Node ne démarre pas — consulter la console d'exécution du Manager et lancer `bash scripts/diagnose.sh` en SSH.
+**Commandes utiles :**
+```bash
+pm2 status
+pm2 logs hdm
+pm2 restart hdm
+curl http://127.0.0.1:4001/health
+```
 
 ---
 

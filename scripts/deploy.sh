@@ -1,51 +1,55 @@
-#!/bin/bash
-# Déploiement Infomaniak — à lancer depuis ~/sites/helldivermobiel.com
-# Le dossier d'exécution Node doit TOUJOURS être la racine du site (pas ./hdm).
+#!/usr/bin/env bash
+# Déploiement prod Infomaniak — git sync + build + pm2 restart (comme zombie-survival)
 set -euo pipefail
 
-SITE_ROOT="${SITE_ROOT:-$HOME/sites/helldivermobiel.com}"
-cd "$SITE_ROOT"
+APP_DIR="${HDM_APP_DIR:-$HOME/sites/helldivermobiel.com}"
+PM2_NAME="${HDM_PM2_NAME:-hdm}"
+BRANCH="${HDM_DEPLOY_BRANCH:-main}"
+LOG_DIR="${HDM_DEPLOY_LOG_DIR:-$HOME/logs}"
+LOG_FILE="$LOG_DIR/hdm-deploy.log"
 
-if [ ! -f package.json ]; then
-  echo "Erreur: package.json introuvable dans $SITE_ROOT"
-  echo "Si le dépôt est encore dans ./hdm, lance une fois: bash hdm/scripts/migrate-to-site-root.sh"
-  exit 1
-fi
-
-export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
-if [ -s "$NVM_DIR/nvm.sh" ]; then
+export PATH="$HOME/.local/bin:$HOME/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
   # shellcheck disable=SC1090
-  . "$NVM_DIR/nvm.sh"
+  . "$HOME/.nvm/nvm.sh"
 fi
+for _node_bin in "$HOME"/.nvm/versions/node/*/bin; do
+  [ -d "$_node_bin" ] && PATH="$_node_bin:$PATH"
+done
+export PATH
 
-echo "→ Déploiement HDM dans $SITE_ROOT"
-git fetch origin
-git reset --hard origin/main
+mkdir -p "$LOG_DIR"
+cd "$APP_DIR"
+
+log() {
+  echo "[$(date -Iseconds)] $*" | tee -a "$LOG_FILE"
+}
+
+log "=== deploy start (branch=$BRANCH, pm2=$PM2_NAME) ==="
+
+git fetch origin "$BRANCH"
+git reset --hard "origin/$BRANCH"
+
 npm install --include=dev
 npm run build
 
-if [ ! -f dist/personnage.fbx ]; then
-  echo "Erreur: dist/personnage.fbx manquant — vérifie que assets/ est présent puis relance npm run build"
-  exit 1
-fi
-
-# Apache peut servir index.html (dev) à la racine au lieu de proxy → Node/dist.
-# Sans ça : spinner infini (le navigateur charge /src/main.js qui n'existe pas en prod).
 rm -f index.html admin.html 2>/dev/null || true
-
-# Anciennes copies statiques hors dist/ (déploiements manuels)
 rm -rf batiment ennemie environement guns solmap1 vehicule 2>/dev/null || true
 rm -f personnage.fbx 2>/dev/null || true
 
-echo "→ Build OK ($(du -sh dist | cut -f1))"
-echo "→ index.html dev supprimé à la racine (prod = dist/ via Node)"
-echo ""
-echo "Manager Infomaniak (onglet Node.js) — copier-coller exact :"
-echo "  Dossier d'exécution : sites/helldivermobiel.com"
-echo "  Port                : 4001"
-echo "  Build               : npm install --include=dev && npm run build"
-echo "  Lancement           : npm start"
-echo "  Node.js             : 20 LTS"
-echo ""
-echo "→ Puis clique REDÉMARRER dans le Manager"
-echo "→ Test : bash scripts/diagnose.sh"
+if ! command -v pm2 >/dev/null 2>&1; then
+  log "ERROR: pm2 introuvable — installe-le : npm install -g pm2"
+  exit 1
+fi
+
+if pm2 describe "$PM2_NAME" >/dev/null 2>&1; then
+  pm2 restart "$PM2_NAME" 2>&1 | tee -a "$LOG_FILE"
+else
+  pm2 start ecosystem.config.cjs 2>&1 | tee -a "$LOG_FILE"
+  pm2 save 2>&1 | tee -a "$LOG_FILE" || true
+fi
+
+sleep 1
+curl -sf "http://127.0.0.1:4001/health" 2>&1 | tee -a "$LOG_FILE" || log "WARN: health check failed"
+
+log "=== deploy done ==="
