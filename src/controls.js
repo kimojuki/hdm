@@ -16,12 +16,19 @@ export class InputManager {
     this.keys = new Set();
     this.joystick = { x: 0, y: 0, active: false };
     this._jumpQueued = false;
+    this._fireQueued = false;
+    this._fireHeld = false;
     this.target = target;
 
     const onKeyDown = (e) => {
       if (e.code === 'Space') {
         e.preventDefault();
         this._jumpQueued = true;
+        return;
+      }
+      if (e.code === 'KeyF') {
+        e.preventDefault();
+        this._fireQueued = true;
         return;
       }
       if (!KEYS[e.code]) return;
@@ -49,12 +56,33 @@ export class InputManager {
 
     this._setupJoystick();
     this._setupJumpButton();
+    this._setupFireButton();
+    this._setupMouseFire(target);
   }
 
   consumeJump() {
     const jump = this._jumpQueued;
     this._jumpQueued = false;
     return jump;
+  }
+
+  consumeFire() {
+    const fire = this._fireQueued;
+    this._fireQueued = false;
+    return fire;
+  }
+
+  isFireHeld() {
+    return this._fireHeld;
+  }
+
+  queueFire() {
+    this._fireQueued = true;
+  }
+
+  setFireHeld(held) {
+    this._fireHeld = held;
+    if (held) this._fireQueued = true;
   }
 
   queueJump() {
@@ -145,6 +173,50 @@ export class InputManager {
 
     btn.addEventListener('touchstart', queue, { passive: false });
     btn.addEventListener('mousedown', queue);
+  }
+
+  _setupFireButton() {
+    const btn = document.getElementById('fire-btn');
+    if (!btn) return;
+
+    const down = (e) => {
+      e.preventDefault();
+      this.setFireHeld(true);
+    };
+    const up = () => {
+      this.setFireHeld(false);
+    };
+
+    btn.addEventListener('touchstart', down, { passive: false });
+    btn.addEventListener('touchend', up);
+    btn.addEventListener('touchcancel', up);
+    btn.addEventListener('mousedown', down);
+    btn.addEventListener('mouseup', up);
+    btn.addEventListener('mouseleave', up);
+  }
+
+  _setupMouseFire(target) {
+    if (!target) return;
+
+    const isUi = (el) => Boolean(
+      el?.closest('#joystick-zone')
+      || el?.closest('#jump-btn')
+      || el?.closest('#fire-btn')
+      || el?.closest('#loading')
+      || el?.closest('#admin-link')
+      || el?.closest('#location-menu')
+      || el?.closest('#map-editor'),
+    );
+
+    target.addEventListener('mousedown', (e) => {
+      if (e.button !== 2 || isUi(e.target)) return;
+      e.preventDefault();
+      this.setFireHeld(true);
+    });
+    target.addEventListener('contextmenu', (e) => e.preventDefault());
+    window.addEventListener('mouseup', (e) => {
+      if (e.button === 2) this.setFireHeld(false);
+    });
   }
 
   getMoveVector() {

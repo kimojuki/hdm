@@ -206,6 +206,29 @@
         box-shadow: 0 0 20px rgba(232, 168, 75, 0.35);
       }
 
+      #fire-btn {
+        position: absolute;
+        bottom: 48px;
+        right: 128px;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 120, 80, 0.85);
+        background: rgba(255, 90, 60, 0.38);
+        color: #fff5eb;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        pointer-events: all;
+        touch-action: manipulation;
+      }
+
+      #fire-btn:active {
+        background: rgba(255, 90, 60, 0.65);
+        box-shadow: 0 0 18px rgba(255, 90, 60, 0.4);
+      }
+
       @media (max-width: 600px) {
         #joystick-zone {
           bottom: max(24px, env(safe-area-inset-bottom, 0px));
@@ -219,6 +242,13 @@
           width: 64px;
           height: 64px;
           font-size: 11px;
+        }
+        #fire-btn {
+          bottom: max(32px, env(safe-area-inset-bottom, 0px));
+          right: max(96px, calc(24px + env(safe-area-inset-right, 0px)));
+          width: 56px;
+          height: 56px;
+          font-size: 10px;
         }
         #camera-hint { right: 16px; font-size: 9px; }
         #hint { display: none; }
@@ -437,8 +467,9 @@
         </div>
       </div>
       <div id="camera-hint">Glisser<br/>vue</div>
-      <div id="hint">ZQSD / WASD — déplacer · M — changer de lieu · E — éditeur (map) · H — debug<br/>Souris glisser — vue · Molette — zoom</div>
+      <div id="hint">ZQSD / WASD — déplacer · M — lieu · F / clic droit — tir · E — éditeur<br/>Souris glisser — vue · Molette — zoom</div>
       <button type="button" id="jump-btn" aria-label="Sauter">Saut</button>
+      <button type="button" id="fire-btn" aria-label="Tirer">Tir</button>
       <a href="/admin.html" id="admin-link">Admin assets</a>
     </div>
     <script>

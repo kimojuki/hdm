@@ -88,8 +88,10 @@ function isUiTarget(target) {
   return Boolean(
     target.closest('#joystick-zone')
     || target.closest('#jump-btn')
+    || target.closest('#fire-btn')
     || target.closest('#loading')
     || target.closest('#admin-link')
+    || target.closest('#location-menu')
     || target.closest('#map-editor'),
   );
 }

@@ -43,6 +43,23 @@ export function attachWeaponToPlayer(player, weapon, modelPivot) {
   weapon.position.set(0.12, 1.1, 0.15);
   modelPivot.add(weapon);
   player.userData.weapon = weapon;
+  ensureMuzzle(weapon);
+}
+
+/** Point de sortie du tir — toujours sur le canon, jamais sur la caméra. */
+export function ensureMuzzle(weapon) {
+  if (weapon.userData.muzzle) return weapon.userData.muzzle;
+
+  const muzzle = new THREE.Object3D();
+  muzzle.name = 'Muzzle';
+  muzzle.position.set(0.78, 0.06, 0);
+  weapon.add(muzzle);
+  weapon.userData.muzzle = muzzle;
+  return muzzle;
+}
+
+export function getMuzzle(weapon) {
+  return weapon?.userData?.muzzle ?? null;
 }
 
 export async function equipAk47(player, modelPivot) {

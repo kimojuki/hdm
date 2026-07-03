@@ -3,7 +3,13 @@ import { loadPlayer, updatePlayerAnimation } from './player.js';
 import { InputManager } from './controls.js';
 import { limitMovementBySlope, resolveGroundMovement, MAX_STEP_HEIGHT } from './terrain.js';
 import { updateEnemy } from './enemy.js';
-import { CameraController, bindCameraInput, getCameraRelativeMove } from './cameraController.js';
+import { bindCameraInput, getCameraRelativeMove } from './cameraController.js';
+import { ThirdPersonCamera } from './thirdPersonCamera.js';
+import { updateCharacterRotation } from './characterRotation.js';
+import { AimSystem } from './aimSystem.js';
+import { ProjectileSystem } from './projectileSystem.js';
+import { initCrosshair } from './crosshair.js';
+import { getMuzzle } from './weapons.js';
 import { MapEditor } from './mapEditor.js';
 import { SceneManager } from './sceneManager.js';
 import { loadMissionMap } from './missionMap.js';
@@ -28,6 +34,7 @@ const GROUND_SNAP = 0.08;
 const DPR_CAP = 1.25;
 const SHADOW_MAP_SIZE = 1024;
 const SHADOW_FOLLOW_HALF = 26;
+const FIRE_INTERVAL = 0.14;
 
 const app = document.getElementById('app');
 const loadingEl = document.getElementById('loading');
@@ -138,12 +145,18 @@ function loadTexture(url, nearest = true) {
 }
 
 const input = new InputManager(renderer.domElement);
-const cameraCtrl = new CameraController({
+const tpsCamera = new ThirdPersonCamera({
   distance: 10.8,
   lookHeight: 1.1,
   initialPitch: 0.58,
+  shoulderOffset: 0.42,
 });
-bindCameraInput(renderer.domElement, cameraCtrl);
+bindCameraInput(renderer.domElement, tpsCamera.controller);
+const aimSystem = new AimSystem();
+let projectileSystem = null;
+let fireCooldown = 0;
+
+initCrosshair();
 const clock = new THREE.Clock();
 
 const sceneManager = new SceneManager(scene);
@@ -170,8 +183,35 @@ function getMapHalf() {
   return sceneManager.getMapHalf();
 }
 
+function getAimTargets() {
+  const targets = [];
+  if (sceneManager.missionMap?.root) targets.push(sceneManager.missionMap.root);
+  if (sceneManager.playerBase?.root) targets.push(sceneManager.playerBase.root);
+  return targets;
+}
+
+function getCameraCollisionTargets() {
+  return getAimTargets();
+}
+
 function getEnemies() {
   return sceneManager.isInMissionMap() ? (sceneManager.missionMap?.enemies ?? []) : [];
+}
+
+function tryFire() {
+  const muzzle = getMuzzle(player?.userData?.weapon);
+  if (!muzzle || !projectileSystem) return;
+  projectileSystem.fire(muzzle, aimSystem.aimPoint);
+}
+
+function updateCombat(dt) {
+  if (fireCooldown > 0) fireCooldown -= dt;
+  const wantsFire = input.consumeFire() || input.isFireHeld();
+  if (wantsFire && fireCooldown <= 0) {
+    tryFire();
+    fireCooldown = FIRE_INTERVAL;
+  }
+  projectileSystem?.update(dt);
 }
 
 function setTitle(location) {
@@ -333,7 +373,8 @@ async function switchToLocation(location) {
     currentLocation = location;
     locationMenu.setActive(location);
     setTitle(location);
-    cameraCtrl.applyToCamera(camera, player.position, 1);
+    tpsCamera._positionInitialized = false;
+    tpsCamera.applyToCamera(camera, player.position, 1, getCameraCollisionTargets());
     setLocationTransitionStatus('Prêt');
   } catch (err) {
     console.error('[HDM] Changement de lieu échoué:', err);
@@ -352,7 +393,7 @@ async function switchToLocation(location) {
           collisionWorld.addDynamic(player, 0.06);
           playerPhysics.velocityY = 0;
           playerPhysics.onGround = true;
-          cameraCtrl.applyToCamera(camera, player.position, 1);
+          tpsCamera.applyToCamera(camera, player.position, 1, getCameraCollisionTargets());
         }
       } catch (restoreErr) {
         console.error('[HDM] Restauration du lieu précédent échouée:', restoreErr);
@@ -388,6 +429,7 @@ async function initGame() {
     setLocationTransitionStatus('Chargement du personnage…');
     player = await loadPlayer();
     scene.add(player);
+    projectileSystem = new ProjectileSystem(scene);
 
     await enterMissionLocation();
 
@@ -399,7 +441,7 @@ async function initGame() {
     currentLocation = LOCATION.MISSION;
     locationMenu.setActive(LOCATION.MISSION);
     setTitle(LOCATION.MISSION);
-    cameraCtrl.applyToCamera(camera, player.position, 1);
+    tpsCamera.applyToCamera(camera, player.position, 1, getCameraCollisionTargets());
     setLocationTransitionStatus('Prêt');
   } finally {
     switching = false;
@@ -428,7 +470,7 @@ function animate() {
 
     if (editorActive) {
       mapEditor.update();
-      cameraCtrl.applyToCamera(camera, player.position, dt);
+      tpsCamera.applyToCamera(camera, player.position, dt, getCameraCollisionTargets());
     } else {
       const moveInput = input.getMoveVector();
       const isMoving = moveInput.x !== 0 || moveInput.y !== 0;
@@ -452,7 +494,7 @@ function animate() {
       player.position.y += playerPhysics.velocityY * dt;
 
       if (isMoving) {
-        const dir = getCameraRelativeMove(moveInput, cameraCtrl.getYaw());
+        const dir = getCameraRelativeMove(moveInput, tpsCamera.getYaw());
         const len = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
         const nx = dir.x / len;
         const nz = dir.z / len;
@@ -503,8 +545,9 @@ function animate() {
           player.position.x = resolved.x;
           player.position.z = resolved.z;
         }
-        player.rotation.y = Math.atan2(nx, nz);
       }
+
+      updateCharacterRotation(player, tpsCamera.getCharacterYaw(), dt);
 
       const stepTolerance = isMoving && playerPhysics.onGround ? MAX_STEP_HEIGHT : 0.35;
       const groundY = groundSampler.sample(
@@ -527,7 +570,15 @@ function animate() {
       }
 
       updatePlayerAnimation(player, dt, isMoving, 1);
-      cameraCtrl.applyToCamera(camera, player.position, dt);
+
+      tpsCamera.applyToCamera(
+        camera,
+        player.position,
+        dt,
+        getCameraCollisionTargets(),
+      );
+      aimSystem.update(camera, getAimTargets(), player);
+      updateCombat(dt);
 
       if (sceneManager.isInMissionMap()) {
         sceneManager.missionMap?.updateStreaming?.(
