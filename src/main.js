@@ -1,11 +1,10 @@
 import * as THREE from 'three';
-import { loadPlayer, updatePlayerAnimation } from './player.js';
-import { InputManager } from './controls.js';
-import { limitMovementBySlope, resolveGroundMovement, MAX_STEP_HEIGHT } from './terrain.js';
 import { updateEnemy } from './enemy.js';
-import { bindCameraInput, getCameraRelativeMove } from './cameraController.js';
 import { ThirdPersonCamera } from './thirdPersonCamera.js';
-import { updateCharacterRotation } from './characterRotation.js';
+import { loadPlayer } from './player.js';
+import { InputController } from './inputController.js';
+import { CharacterController } from './characterController.js';
+import { AimController } from './aimController.js';
 import { AimSystem } from './aimSystem.js';
 import { ProjectileSystem } from './projectileSystem.js';
 import { initCrosshair } from './crosshair.js';
@@ -144,20 +143,25 @@ function loadTexture(url, nearest = true) {
   });
 }
 
-const input = new InputManager(renderer.domElement);
 const tpsCamera = new ThirdPersonCamera({
-  distance: 5.2,
-  minDistance: 3.0,
-  maxDistance: 8,
-  lookHeight: 0.95,
-  lookTargetHeight: 0.88,
-  initialPitch: 0.26,
-  minPitch: 0.14,
-  maxPitch: 0.68,
-  shoulderOffset: 0.32,
+  // Cadrage Helldivers 2 (mesuré sur captures du jeu) : corps entier visible
+  // en bas-gauche, tête vers ~45 % de hauteur, haut de l'écran libre.
+  distance: 3.9,
+  minDistance: 2.2,
+  maxDistance: 7,
+  pivotHeight: 1.4,
+  // Convention visée : pitch < 0 = regarder vers le bas (caméra au-dessus).
+  initialPitch: THREE.MathUtils.degToRad(-10),
+  minPitch: THREE.MathUtils.degToRad(-45),
+  maxPitch: THREE.MathUtils.degToRad(35),
+  // Épaules ancrées à ~36 % du bord gauche, ~36 % depuis le bas.
+  screenAnchorX: 0.36,
+  screenAnchorY: 0.36,
 });
-bindCameraInput(renderer.domElement, tpsCamera.controller);
+const inputController = new InputController(renderer.domElement, tpsCamera.controller);
 const aimSystem = new AimSystem();
+// Zoom visée : 3.9 m → ~3.0 m, comme le resserrement de Helldivers 2.
+const aimController = new AimController({ aimSystem, cameraCtrl: tpsCamera.controller, aimZoomFactor: 0.78 });
 let projectileSystem = null;
 let fireCooldown = 0;
 
@@ -174,7 +178,15 @@ let textures = null;
 let currentLocation = null;
 let switching = false;
 let simFrame = 0;
-const playerPhysics = { velocityY: 0, onGround: true };
+const characterController = new CharacterController({
+  playerRadius: PLAYER_RADIUS,
+  moveSpeed: MOVE_SPEED,
+  jumpSpeed: JUMP_SPEED,
+  gravity: GRAVITY,
+  maxClimbAngle: MAX_CLIMB_ANGLE,
+  groundSnap: GROUND_SNAP,
+  turnSpeed: 12,
+});
 
 function getCollisionWorld() {
   return sceneManager.getCollisionWorld();
@@ -188,15 +200,36 @@ function getMapHalf() {
   return sceneManager.getMapHalf();
 }
 
+const _aimTargetsCache = [];
 function getAimTargets() {
-  const targets = [];
-  if (sceneManager.missionMap?.root) targets.push(sceneManager.missionMap.root);
-  if (sceneManager.playerBase?.root) targets.push(sceneManager.playerBase.root);
-  return targets;
+  _aimTargetsCache.length = 0;
+  if (sceneManager.missionMap?.root) _aimTargetsCache.push(sceneManager.missionMap.root);
+  if (sceneManager.playerBase?.root) _aimTargetsCache.push(sceneManager.playerBase.root);
+  return _aimTargetsCache;
 }
 
+const _cameraCollisionTargetsCache = [];
 function getCameraCollisionTargets() {
-  return getAimTargets();
+  _cameraCollisionTargetsCache.length = 0;
+
+  // Mission : on limite à des racines statiques (sol/bâtiments/montagnes),
+  // pour réduire le bruit et rendre la collision caméra plus stable.
+  if (sceneManager.missionMap) {
+    const { groundMesh, buildingsGroup, mountainsGroup } = sceneManager.missionMap;
+    if (groundMesh) _cameraCollisionTargetsCache.push(groundMesh);
+    if (buildingsGroup) _cameraCollisionTargetsCache.push(buildingsGroup);
+    if (mountainsGroup) _cameraCollisionTargetsCache.push(mountainsGroup);
+  }
+
+  // Base : racines statiques dédiées.
+  if (sceneManager.playerBase) {
+    const { baseScene, glassBridge, groundMesh } = sceneManager.playerBase;
+    if (baseScene) _cameraCollisionTargetsCache.push(baseScene);
+    if (glassBridge) _cameraCollisionTargetsCache.push(glassBridge);
+    if (groundMesh) _cameraCollisionTargetsCache.push(groundMesh);
+  }
+
+  return _cameraCollisionTargetsCache;
 }
 
 function getEnemies() {
@@ -211,7 +244,7 @@ function tryFire() {
 
 function updateCombat(dt) {
   if (fireCooldown > 0) fireCooldown -= dt;
-  const wantsFire = input.consumeFire() || input.isFireHeld();
+  const wantsFire = inputController.consumeFire() || inputController.isFireHeld();
   if (wantsFire && fireCooldown <= 0) {
     tryFire();
     fireCooldown = FIRE_INTERVAL;
@@ -372,8 +405,7 @@ async function switchToLocation(location) {
     }
 
     collisionWorld.addDynamic(player, 0.06);
-    playerPhysics.velocityY = 0;
-    playerPhysics.onGround = true;
+    characterController.reset();
 
     currentLocation = location;
     locationMenu.setActive(location);
@@ -396,8 +428,7 @@ async function switchToLocation(location) {
         const collisionWorld = getCollisionWorld();
         if (collisionWorld && player) {
           collisionWorld.addDynamic(player, 0.06);
-          playerPhysics.velocityY = 0;
-          playerPhysics.onGround = true;
+          characterController.reset();
           tpsCamera.applyToCamera(camera, player.position, 1, getCameraCollisionTargets());
         }
       } catch (restoreErr) {
@@ -440,8 +471,7 @@ async function initGame() {
 
     const collisionWorld = getCollisionWorld();
     collisionWorld.addDynamic(player, 0.06);
-    playerPhysics.velocityY = 0;
-    playerPhysics.onGround = true;
+    characterController.reset();
 
     currentLocation = LOCATION.MISSION;
     locationMenu.setActive(LOCATION.MISSION);
@@ -451,7 +481,7 @@ async function initGame() {
   } finally {
     switching = false;
     await hideLocationTransition();
-    input.focus();
+    inputController.focus();
   }
 }
 
@@ -475,10 +505,12 @@ function animate() {
 
     if (editorActive) {
       mapEditor.update();
+      aimController.setLookActive(inputController.lookActive);
       tpsCamera.applyToCamera(camera, player.position, dt, getCameraCollisionTargets());
     } else {
-      const moveInput = input.getMoveVector();
-      const isMoving = moveInput.x !== 0 || moveInput.y !== 0;
+      const moveInput = inputController.getMoveVector();
+      const wantsJump = inputController.consumeJump();
+
       const collisionWorld = getCollisionWorld();
       const groundSampler = getGroundSampler();
       const mapHalf = getMapHalf();
@@ -490,99 +522,25 @@ function animate() {
         return;
       }
 
-      if (input.consumeJump() && playerPhysics.onGround) {
-        playerPhysics.velocityY = JUMP_SPEED;
-        playerPhysics.onGround = false;
-      }
+      const cameraYaw = tpsCamera.getYaw();
+      const characterYaw = tpsCamera.getCharacterYaw();
 
-      playerPhysics.velocityY -= GRAVITY * dt;
-      player.position.y += playerPhysics.velocityY * dt;
+      characterController.update(dt, {
+        player,
+        moveInput,
+        wantsJump,
+        collisionWorld,
+        groundSampler,
+        mapHalf,
+        cameraYaw,
+        characterYaw,
+        simFrame,
+      });
 
-      if (isMoving) {
-        const dir = getCameraRelativeMove(moveInput, tpsCamera.getYaw());
-        const len = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
-        const nx = dir.x / len;
-        const nz = dir.z / len;
-        let dx = nx * MOVE_SPEED * dt;
-        let dz = nz * MOVE_SPEED * dt;
-
-        if (playerPhysics.onGround) {
-          const limited = limitMovementBySlope(
-            player.position.x,
-            player.position.z,
-            dx,
-            dz,
-            groundSampler,
-            MAX_CLIMB_ANGLE,
-            player.position.y,
-          );
-          dx = limited.dx;
-          dz = limited.dz;
-
-          const moved = resolveGroundMovement(
-            player.position.x,
-            player.position.z,
-            player.position.y,
-            dx,
-            dz,
-            PLAYER_RADIUS,
-            groundSampler,
-            collisionWorld,
-            mapHalf,
-            player,
-            simFrame,
-          );
-          player.position.x = moved.x;
-          player.position.z = moved.z;
-          player.position.y = moved.y;
-        } else {
-          const resolved = collisionWorld.resolve(
-            player.position.x,
-            player.position.z,
-            dx,
-            dz,
-            PLAYER_RADIUS,
-            mapHalf,
-            player.position.y,
-            player,
-            simFrame,
-          );
-          player.position.x = resolved.x;
-          player.position.z = resolved.z;
-        }
-      }
-
-      updateCharacterRotation(player, tpsCamera.getCharacterYaw(), dt);
-
-      const stepTolerance = isMoving && playerPhysics.onGround ? MAX_STEP_HEIGHT : 0.35;
-      const groundY = groundSampler.sample(
-        player.position.x,
-        player.position.y,
-        player.position.z,
-        stepTolerance,
-        isMoving ? 'move' : 'snap',
-      );
-      if (player.position.y <= groundY + GROUND_SNAP && playerPhysics.velocityY <= 0) {
-        player.position.y = groundY;
-        playerPhysics.velocityY = 0;
-        playerPhysics.onGround = true;
-      } else if (player.position.y < groundY - 0.12 && playerPhysics.velocityY <= 0) {
-        player.position.y = groundY;
-        playerPhysics.velocityY = 0;
-        playerPhysics.onGround = true;
-      } else {
-        playerPhysics.onGround = false;
-      }
-
-      updatePlayerAnimation(player, dt, isMoving, 1);
-
-      tpsCamera.applyToCamera(
-        camera,
-        player.position,
-        dt,
-        getCameraCollisionTargets(),
-      );
-      aimSystem.update(camera, getAimTargets(), player);
+      // Zoom visée : fixé avant la pose de la caméra pour éviter un décalage d'une frame.
+      aimController.setLookActive(inputController.lookActive);
+      tpsCamera.applyToCamera(camera, player.position, dt, getCameraCollisionTargets());
+      aimController.update(camera, { targets: getAimTargets(), excludeRoot: player, lookActive: inputController.lookActive });
       updateCombat(dt);
 
       if (sceneManager.isInMissionMap()) {

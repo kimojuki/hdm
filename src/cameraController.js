@@ -1,32 +1,60 @@
 import * as THREE from 'three';
 
-const _pos = new THREE.Vector3();
-const _look = new THREE.Vector3();
+const TWO_PI = Math.PI * 2;
 
+/**
+ * État caméra TPS (yaw / pitch / distance / zoom visée) — aucun accès DOM.
+ *
+ * Convention pitch : radians, > 0 = regarder vers le haut, < 0 = vers le bas.
+ * Les entrées écrivent `targetYaw` / `targetPitch` ; `update()` lisse ensuite
+ * `yaw` / `pitch` vers la cible (inertie légère, aucun jitter). Le rig caméra
+ * (`ThirdPersonCamera`) lit UNIQUEMENT les valeurs lissées : position et
+ * orientation sont donc toujours calculées depuis la même source → rig rigide,
+ * personnage verrouillé à l'écran même pendant les rotations rapides.
+ */
 export class CameraController {
   constructor({
-    distance = 10.8,
-    minDistance = 4.5,
-    maxDistance = 16,
-    minPitch = 0.25,
-    maxPitch = 1.15,
-    lookHeight = 1.1,
+    distance = 5.2,
+    minDistance = 3,
+    maxDistance = 8,
+    minPitch = THREE.MathUtils.degToRad(-45),
+    maxPitch = THREE.MathUtils.degToRad(35),
     initialYaw = 0,
-    initialPitch = 0.58,
+    initialPitch = THREE.MathUtils.degToRad(-12),
     touchSensitivity = 0.0042,
     mouseSensitivity = 0.0028,
+    /** Vitesse de convergence rotation (1/s) — grand = réactif, petit = mou. */
+    rotationLambda = 22,
+    /** Vitesse de convergence distance (1/s). */
+    distanceLambda = 9,
+    /** Vitesse de convergence zoom visée (1/s). */
+    aimZoomLambda = 9,
   } = {}) {
-    this.yaw = initialYaw;
-    this.pitch = THREE.MathUtils.clamp(initialPitch, minPitch, maxPitch);
-    this.distance = distance;
-    this.targetDistance = distance;
-    this.minDistance = minDistance;
-    this.maxDistance = maxDistance;
     this.minPitch = minPitch;
     this.maxPitch = maxPitch;
-    this.lookHeight = lookHeight;
+    this.targetYaw = initialYaw;
+    this.targetPitch = THREE.MathUtils.clamp(initialPitch, minPitch, maxPitch);
+    this.yaw = this.targetYaw;
+    this.pitch = this.targetPitch;
+    this.rotationLambda = rotationLambda;
+
+    this.minDistance = minDistance;
+    this.maxDistance = maxDistance;
+    /** Distance choisie par l'utilisateur (molette / pincement). */
+    this.baseTargetDistance = THREE.MathUtils.clamp(distance, minDistance, maxDistance);
+    /** Distance cible après application du zoom visée. */
+    this.targetDistance = this.baseTargetDistance;
+    /** Distance lissée effectivement utilisée par le rig. */
+    this.distance = this.baseTargetDistance;
+    this.distanceLambda = distanceLambda;
+
     this.touchSensitivity = touchSensitivity;
     this.mouseSensitivity = mouseSensitivity;
+
+    /** Zoom visée : multiplicateur de distance lissé (1 = pas de zoom). */
+    this.aimZoomFactor = 1;
+    this.aimZoomTargetFactor = 1;
+    this.aimZoomLambda = aimZoomLambda;
   }
 
   getYaw() {
@@ -35,161 +63,79 @@ export class CameraController {
 
   applyDrag(dx, dy, isTouch = false) {
     const s = isTouch ? this.touchSensitivity : this.mouseSensitivity;
-    this.yaw -= dx * s;
-    this.pitch = THREE.MathUtils.clamp(this.pitch - dy * s, this.minPitch, this.maxPitch);
+    this.targetYaw -= dx * s;
+    this.targetPitch = THREE.MathUtils.clamp(
+      this.targetPitch - dy * s,
+      this.minPitch,
+      this.maxPitch,
+    );
   }
 
   addZoomDelta(delta) {
-    this.targetDistance = THREE.MathUtils.clamp(
-      this.targetDistance + delta,
+    this.baseTargetDistance = THREE.MathUtils.clamp(
+      this.baseTargetDistance + delta,
       this.minDistance,
       this.maxDistance,
     );
   }
 
   setPinchDistance(dist) {
-    this.targetDistance = THREE.MathUtils.clamp(dist, this.minDistance, this.maxDistance);
+    this.baseTargetDistance = THREE.MathUtils.clamp(dist, this.minDistance, this.maxDistance);
+  }
+
+  /**
+   * Active/désactive le zoom visée.
+   * @param {boolean} active
+   * @param {number} zoomFactor multiplicateur de distance (ex: 0.85 => -15 %)
+   */
+  setAimZoomActive(active, zoomFactor = 0.85) {
+    this.aimZoomTargetFactor = active ? zoomFactor : 1;
+  }
+
+  /** Aligne instantanément l'état lissé sur la cible (téléport / changement de map). */
+  snap() {
+    this.yaw = this.targetYaw;
+    this.pitch = this.targetPitch;
+    this.aimZoomFactor = this.aimZoomTargetFactor;
+    this.targetDistance = THREE.MathUtils.clamp(
+      this.baseTargetDistance * this.aimZoomFactor,
+      this.minDistance,
+      this.maxDistance,
+    );
+    this.distance = this.targetDistance;
   }
 
   update(dt) {
-    this.distance = THREE.MathUtils.lerp(
-      this.distance,
-      this.targetDistance,
-      1 - Math.pow(0.0001, dt),
+    // Rotation : convergence exponentielle vers la cible, wrap-aware sur le yaw
+    // (le chemin le plus court est toujours pris, jamais de tour complet).
+    const tRot = 1 - Math.exp(-dt * this.rotationLambda);
+    const dYaw = Math.atan2(
+      Math.sin(this.targetYaw - this.yaw),
+      Math.cos(this.targetYaw - this.yaw),
     );
-  }
+    this.yaw += dYaw * tRot;
+    this.pitch += (this.targetPitch - this.pitch) * tRot;
 
-  getIdealPosition(playerPos) {
-    const cosP = Math.cos(this.pitch);
-    const sinP = Math.sin(this.pitch);
-    const hDist = this.distance * cosP;
+    // Évite la dérive numérique du yaw sur les longues sessions.
+    if (Math.abs(this.yaw) > TWO_PI * 2) {
+      const wrap = Math.round(this.yaw / TWO_PI) * TWO_PI;
+      this.yaw -= wrap;
+      this.targetYaw -= wrap;
+    }
 
-    _pos.set(
-      playerPos.x + Math.sin(this.yaw) * hDist,
-      playerPos.y + this.lookHeight + this.distance * sinP,
-      playerPos.z + Math.cos(this.yaw) * hDist,
+    // Zoom visée lissé (aller ET retour progressifs).
+    this.aimZoomFactor += (this.aimZoomTargetFactor - this.aimZoomFactor)
+      * (1 - Math.exp(-dt * this.aimZoomLambda));
+
+    this.targetDistance = THREE.MathUtils.clamp(
+      this.baseTargetDistance * this.aimZoomFactor,
+      this.minDistance,
+      this.maxDistance,
     );
-    return _pos;
-  }
 
-  getLookTarget(playerPos) {
-    return _look.set(playerPos.x, playerPos.y + this.lookHeight, playerPos.z);
-  }
-
-  applyToCamera(camera, playerPos, dt) {
-    this.update(dt);
-    const ideal = this.getIdealPosition(playerPos);
-    camera.position.lerp(ideal, 1 - Math.pow(0.001, dt));
-    camera.lookAt(this.getLookTarget(playerPos));
+    this.distance += (this.targetDistance - this.distance)
+      * (1 - Math.exp(-dt * this.distanceLambda));
   }
 }
 
-function isUiTarget(target) {
-  return Boolean(
-    target.closest('#joystick-zone')
-    || target.closest('#jump-btn')
-    || target.closest('#fire-btn')
-    || target.closest('#loading')
-    || target.closest('#admin-link')
-    || target.closest('#location-menu')
-    || target.closest('#map-editor'),
-  );
-}
-
-function isMobileTouch() {
-  return window.matchMedia('(pointer: coarse)').matches;
-}
-
-/** Glisser pour tourner la vue ; molette / pincement pour zoom (mobile prioritaire). */
-export function bindCameraInput(canvas, cameraCtrl) {
-  let dragPointer = null;
-  let lastX = 0;
-  let lastY = 0;
-  let pinchStartDist = 0;
-  let pinchStartZoom = cameraCtrl.targetDistance;
-
-  const onPointerDown = (e) => {
-    if (isUiTarget(e.target)) return;
-    if (e.pointerType === 'touch' && isMobileTouch()) {
-      const split = window.innerWidth * 0.42;
-      if (e.clientX < split) return;
-    }
-
-    dragPointer = e.pointerId;
-    lastX = e.clientX;
-    lastY = e.clientY;
-    canvas.setPointerCapture(e.pointerId);
-  };
-
-  const onPointerMove = (e) => {
-    if (dragPointer !== e.pointerId) return;
-    const dx = e.clientX - lastX;
-    const dy = e.clientY - lastY;
-    if (dx !== 0 || dy !== 0) {
-      cameraCtrl.applyDrag(dx, dy, e.pointerType === 'touch');
-    }
-    lastX = e.clientX;
-    lastY = e.clientY;
-  };
-
-  const endDrag = (e) => {
-    if (dragPointer !== e.pointerId) return;
-    dragPointer = null;
-    try {
-      canvas.releasePointerCapture(e.pointerId);
-    } catch {
-      /* ignore */
-    }
-  };
-
-  canvas.addEventListener('pointerdown', onPointerDown);
-  canvas.addEventListener('pointermove', onPointerMove);
-  canvas.addEventListener('pointerup', endDrag);
-  canvas.addEventListener('pointercancel', endDrag);
-
-  canvas.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    cameraCtrl.addZoomDelta(e.deltaY * 0.014);
-  }, { passive: false });
-
-  canvas.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 2 || isUiTarget(e.target)) return;
-    const [a, b] = e.touches;
-    pinchStartDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-    pinchStartZoom = cameraCtrl.targetDistance;
-  }, { passive: true });
-
-  canvas.addEventListener('touchmove', (e) => {
-    if (e.touches.length !== 2 || pinchStartDist < 1) return;
-    e.preventDefault();
-    const [a, b] = e.touches;
-    const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-    const ratio = pinchStartDist / dist;
-    cameraCtrl.setPinchDistance(pinchStartZoom * ratio);
-  }, { passive: false });
-}
-
-/** Convertit l'entrée écran (joystick/clavier) en direction monde selon la caméra. */
-export function getCameraRelativeMove(move, cameraYaw) {
-  const { x, y } = move;
-  if (x === 0 && y === 0) return { x: 0, z: 0 };
-
-  const inputForward = -y;
-  const inputStrafe = x;
-
-  const sin = Math.sin(cameraYaw);
-  const cos = Math.cos(cameraYaw);
-  // Direction « avant » de la caméra projetée au sol (de la caméra vers le joueur)
-  const fx = -sin;
-  const fz = -cos;
-  // Droite de la caméra au sol : forward × up
-  const rx = cos;
-  const rz = -sin;
-
-  let mx = fx * inputForward + rx * inputStrafe;
-  let mz = fz * inputForward + rz * inputStrafe;
-  const len = Math.hypot(mx, mz);
-  if (len < 1e-6) return { x: 0, z: 0 };
-
-  return { x: mx / len, z: mz / len };
-}
+// Les bindings DOM (drag / pinch / molette) vivent dans `src/inputController.js`.

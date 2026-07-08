@@ -968,6 +968,18 @@ export class PlayerBase {
     return roots;
   }
 
+  /**
+   * Cibles raycast caméra (occlusion) : racines statiques limitant le bruit.
+   * On évite de passer `this.root` complet (UI/helpers, groupes, etc).
+   */
+  getCameraCollisionTargets() {
+    const targets = [];
+    if (this.baseScene) targets.push(this.baseScene);
+    if (this.glassBridge) targets.push(this.glassBridge);
+    if (this.groundMesh) targets.push(this.groundMesh);
+    return targets;
+  }
+
   getGroundSampler() {
     if (!this._groundSampler) {
       this._groundSampler = new GroundSampler({

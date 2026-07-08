@@ -80,6 +80,7 @@ export async function loadMissionMap(textures) {
     collisionWorld,
     terrainRoots: [groundMesh],
     groundMesh,
+    buildingsGroup,
     mountainsGroup,
     enemies,
     debugGroup,
