@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { updateEnemy } from './enemy.js';
 import { ThirdPersonCamera } from './thirdPersonCamera.js';
-import { loadPlayer } from './player.js';
+import { loadPlayer, triggerPlayerFire } from './player.js';
 import { InputController } from './inputController.js';
 import { CharacterController } from './characterController.js';
 import { AimController } from './aimController.js';
@@ -33,7 +33,7 @@ const GROUND_SNAP = 0.08;
 const DPR_CAP = 1.25;
 const SHADOW_MAP_SIZE = 1024;
 const SHADOW_FOLLOW_HALF = 26;
-const FIRE_INTERVAL = 0.14;
+const FIRE_INTERVAL = 0.32;
 
 const app = document.getElementById('app');
 const loadingEl = document.getElementById('loading');
@@ -242,14 +242,21 @@ function tryFire() {
   projectileSystem.fire(muzzle, aimSystem.aimPoint);
 }
 
-function updateCombat(dt) {
+function updateCombat(dt, { beforeAnimation = false } = {}) {
   if (fireCooldown > 0) fireCooldown -= dt;
   const wantsFire = inputController.consumeFire() || inputController.isFireHeld();
-  if (wantsFire && fireCooldown <= 0) {
-    tryFire();
-    fireCooldown = FIRE_INTERVAL;
+
+  if (beforeAnimation) {
+    if (wantsFire && fireCooldown <= 0) {
+      triggerPlayerFire(player);
+      fireCooldown = FIRE_INTERVAL;
+      return true;
+    }
+    return false;
   }
+
   projectileSystem?.update(dt);
+  return false;
 }
 
 function setTitle(location) {
@@ -459,6 +466,10 @@ async function initGame() {
 
   try {
     await assertAsset('/personnage.fbx');
+    await assertAsset('/animation/personnage/Pro%20Rifle%20Pack/idle.fbx');
+    await assertAsset('/animation/personnage/Pro%20Rifle%20Pack/run%20forward.fbx');
+    await assertAsset('/guns/01/Normal%20version%20Color%20and%20NormalMap/GLB/ak47.glb');
+    await assertAsset('/animation/personnage/tire%20arme%20rapide/Gunplay.fbx');
     await assertAsset('/solmap1/Textures/T_Desert_plants.png');
     await assertAsset('/batiment/map1/fbx/Main_house_3lv.fbx');
 
@@ -501,9 +512,9 @@ function animate() {
   const dt = Math.min(clock.getDelta(), 0.05);
 
   if (player && !switching) {
-    const editorActive = mapEditor?.isActive() && sceneManager.isInMissionMap();
+    const mapEditorActive = mapEditor?.isActive() && sceneManager.isInMissionMap();
 
-    if (editorActive) {
+    if (mapEditorActive) {
       mapEditor.update();
       aimController.setLookActive(inputController.lookActive);
       tpsCamera.applyToCamera(camera, player.position, dt, getCameraCollisionTargets());
@@ -525,6 +536,8 @@ function animate() {
       const cameraYaw = tpsCamera.getYaw();
       const characterYaw = tpsCamera.getCharacterYaw();
 
+      const firedThisFrame = updateCombat(dt, { beforeAnimation: true });
+
       characterController.update(dt, {
         player,
         moveInput,
@@ -535,7 +548,10 @@ function animate() {
         cameraYaw,
         characterYaw,
         simFrame,
+        isAiming: inputController.lookActive,
       });
+
+      if (firedThisFrame) tryFire();
 
       // Zoom visée : fixé avant la pose de la caméra pour éviter un décalage d'une frame.
       aimController.setLookActive(inputController.lookActive);

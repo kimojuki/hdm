@@ -72,6 +72,7 @@ export class CharacterController {
     cameraYaw,
     characterYaw,
     simFrame,
+    isAiming = false,
   }) {
     const pp = this.playerPhysics;
 
@@ -163,7 +164,12 @@ export class CharacterController {
       pp.onGround = false;
     }
 
-    updatePlayerAnimation(player, dt, isMoving, 1);
+    updatePlayerAnimation(player, dt, {
+      moveInput,
+      isMoving,
+      onGround: pp.onGround,
+      isAiming,
+    });
     return { isMoving };
   }
 }
